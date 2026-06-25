@@ -86,6 +86,16 @@ npm run start -- -p 8080
 pm2 start npm --name "media-downloader" -- run start -- -p 8080
 ```
 
+### 🎨 Rebranding Tool (Customizer)
+Want to change the app name, description, or GitHub links to your own? We've included a graphical Python tool that automatically finds and replaces branding strings across the entire project safely!
+
+1. Make sure Python is installed.
+2. Run the UI tool from your terminal:
+   ```bash
+   python rebrand_tool.py
+   ```
+3. A window will pop up. Enter your old values (pre-filled with defaults) and your new values, then click **Start Rebranding**.
+
 ---
 
 ## 📂 Project Structure
