@@ -2,6 +2,11 @@ import os
 import shutil
 import customtkinter as ctk
 from tkinter import filedialog, messagebox
+try:
+    from PIL import Image
+    HAS_PIL = True
+except ImportError:
+    HAS_PIL = False
 
 ctk.set_appearance_mode("System")  # Modes: "System" (standard), "Dark", "Light"
 ctk.set_default_color_theme("blue")  # Themes: "blue" (standard), "green", "dark-blue"
@@ -39,16 +44,35 @@ def replace_in_files(project_dir, replacements):
 
 def replace_assets(project_dir, logo_path, favicon_path):
     assets_replaced = 0
+    
+    def process_image(src, dst):
+        if os.path.exists(os.path.dirname(dst)):
+            if HAS_PIL:
+                try:
+                    with Image.open(src) as img:
+                        # Convert to RGBA if it has transparency, else RGB
+                        if img.mode in ('RGBA', 'LA') or (img.mode == 'P' and 'transparency' in img.info):
+                            img = img.convert("RGBA")
+                        else:
+                            img = img.convert("RGB")
+                        img.save(dst, format="PNG")
+                    return True
+                except Exception as e:
+                    print(f"Pillow failed to process {src}: {e}")
+                    return False
+            else:
+                shutil.copy(src, dst)
+                return True
+        return False
+
     if logo_path and os.path.exists(logo_path):
         target = os.path.join(project_dir, "public", "logo.png")
-        if os.path.exists(os.path.dirname(target)):
-            shutil.copy(logo_path, target)
+        if process_image(logo_path, target):
             assets_replaced += 1
             
     if favicon_path and os.path.exists(favicon_path):
         target = os.path.join(project_dir, "src", "app", "icon.png")
-        if os.path.exists(os.path.dirname(target)):
-            shutil.copy(favicon_path, target)
+        if process_image(favicon_path, target):
             assets_replaced += 1
             
     return assets_replaced
