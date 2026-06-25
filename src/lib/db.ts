@@ -1,0 +1,97 @@
+import fs from 'fs';
+import path from 'path';
+
+const DB_PATH = path.join(process.cwd(), 'data', 'db.json');
+
+export interface MediaItem {
+  id: string; // The youtube ID or unique tempId
+  title: string;
+  url: string;
+  filename: string; // e.g. "dQw4w9WgXcQ.mp4"
+  status: 'queued' | 'downloading' | 'completed' | 'error';
+  progress?: string;
+  thumbnail?: string;
+  duration?: string;
+  error?: string;
+  addedAt: number;
+}
+
+export interface Subscription {
+  id: string;
+  url: string;
+  title: string;
+  addedAt: number;
+}
+
+export interface DatabaseSchema {
+  queue: MediaItem[];
+  library: MediaItem[];
+  subscriptions: Subscription[];
+}
+
+const defaultSchema: DatabaseSchema = {
+  queue: [],
+  library: [],
+  subscriptions: [],
+};
+
+// Ensure db exists
+export function initDB() {
+  if (!fs.existsSync(path.dirname(DB_PATH))) {
+    fs.mkdirSync(path.dirname(DB_PATH), { recursive: true });
+  }
+  if (!fs.existsSync(DB_PATH)) {
+    fs.writeFileSync(DB_PATH, JSON.stringify(defaultSchema, null, 2));
+  }
+}
+
+export function readDB(): DatabaseSchema {
+  initDB();
+  try {
+    const data = fs.readFileSync(DB_PATH, 'utf-8');
+    return JSON.parse(data) as DatabaseSchema;
+  } catch (err) {
+    return defaultSchema;
+  }
+}
+
+export function writeDB(data: DatabaseSchema) {
+  initDB();
+  fs.writeFileSync(DB_PATH, JSON.stringify(data, null, 2));
+}
+
+// Helper methods
+
+export function addToQueue(item: MediaItem) {
+  const db = readDB();
+  db.queue.push(item);
+  writeDB(db);
+}
+
+export function updateQueueItem(id: string, updates: Partial<MediaItem>) {
+  const db = readDB();
+  const index = db.queue.findIndex(i => i.id === id);
+  if (index !== -1) {
+    db.queue[index] = { ...db.queue[index], ...updates };
+    writeDB(db);
+  }
+}
+
+export function moveToLibrary(id: string) {
+  const db = readDB();
+  const index = db.queue.findIndex(i => i.id === id);
+  if (index !== -1) {
+    const item = db.queue[index];
+    item.status = 'completed';
+    item.progress = 'Completed';
+    // Add to library but leave in queue so user can manually clear it
+    db.library.push(item);
+    writeDB(db);
+  }
+}
+
+export function clearErrorsFromQueue() {
+  const db = readDB();
+  db.queue = db.queue.filter(i => i.status !== 'error' && i.status !== 'completed');
+  writeDB(db);
+}
