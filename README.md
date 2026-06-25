@@ -1,44 +1,59 @@
-# YouTube Video Downloader
+# Ultimate Media Downloader
 
-A modern, high-performance web application that allows you to easily download YouTube videos in various formats and qualities. Built with Next.js, React, and `yt-dlp`, this application solves the common issue of high-resolution YouTube videos downloading without audio by merging tracks on the server-side before sending them to the client.
+A modern, high-performance web application that allows you to easily download media from **YouTube**, **Instagram**, and **TikTok**. Built with Next.js, React, and `yt-dlp`, this application features a beautiful UI, a background download queue, and a persistent media library.
 
 ## ✨ Features
 
-- **Beautiful Modern UI:** Built with standard CSS to provide a rich, glassmorphism-inspired aesthetic with dark mode and smooth micro-animations.
-- **1-Click Best Quality:** A dedicated button to instantly grab the absolute highest quality video available (up to 4K) and automatically merge it with the best audio track.
-- **Auto-Merging:** For any video format that YouTube stores without an audio track (like standard 1080p or 1440p streams), the server automatically downloads both the video and audio tracks separately, merges them using `ffmpeg`, and delivers a perfect standard `.mp4` file directly to your browser.
-- **Detailed Formats:** Lists all available qualities, file sizes, and containers (MP4, WEBM).
-- **Fast Streaming:** Streams video files directly to your browser download manager using Next.js Edge APIs.
+- **Multi-Platform Support:** Download videos, audio, and images from YouTube, Instagram (Posts & Reels), and TikTok.
+- **Background Queue System:** Don't wait for large files! Add videos to the queue and let the server download them in the background. You can track progress in real-time.
+- **Media Library:** All your downloaded files are saved to the server and organized in a beautiful Library gallery for easy viewing, playing, and redownloading.
+- **Best Quality Auto-Merging:** Automatically grabs the absolute highest quality video available (up to 4K) and merges it with the best audio track using `ffmpeg`.
+- **Bypass Instagram Login Walls:** Built-in support for Netscape cookies (`cookies.txt`) to download private or restricted Instagram media securely.
+- **Beautiful Modern UI:** Glassmorphism-inspired aesthetic with dark mode and smooth micro-animations.
 
-## 🛠️ Technology Stack
+---
 
-- **Frontend:** Next.js (App Router), React 19, Lucide React Icons
-- **Backend:** Node.js, Next.js API Routes
-- **Extraction & Merging:** `youtube-dl-exec` (yt-dlp interface), `ffmpeg-static`
+## 🚀 Getting Started & Setup Guide
 
-## 🚀 Getting Started
+### 1. Prerequisites
+Make sure you have [Node.js](https://nodejs.org/) installed on your machine.
 
-### Prerequisites
-Make sure you have Node.js installed on your machine.
+### 2. Installation
+Clone or download this repository, then open your terminal in the project folder and install dependencies:
+```bash
+npm install
+```
 
-### Installation
+### 3. Setting Up Instagram Authentication (Important!)
+Instagram aggressively blocks automated downloads. To download private or age-restricted Instagram media, you must provide your browser cookies to the application.
+*(Note: Public Instagram images use a special embed workaround and may not require cookies, but for video Reels, cookies are highly recommended).*
 
-1. Clone or download this repository.
-2. Open your terminal in the project folder and install the dependencies:
-   ```bash
-   npm install
-   ```
+1. Install a browser extension like **"Get cookies.txt LOCALLY"** on Chrome/Firefox.
+2. Log into your Instagram account on your browser.
+3. Click the extension and export the cookies for `instagram.com` in Netscape format.
+4. Save the exported file exactly as:
+   `data/instagram_cookies.txt`
+   *(This folder is ignored by git, so your private session will never be uploaded to GitHub).*
 
-### Running the App
-
+### 4. Running the App
 Start the development server:
 ```bash
 npm run dev
 ```
-Open [http://localhost:3000](http://localhost:3000) in your browser to see the application.
+Open [http://localhost:3000](http://localhost:3000) in your browser to start downloading!
 
-## 💡 How it works under the hood
+---
 
-YouTube utilizes DASH (Dynamic Adaptive Streaming over HTTP), meaning it stores high-quality video tracks (1080p+) entirely separate from audio tracks to save bandwidth.
+## 📂 Project Structure
 
-When you attempt to download these qualities, traditional downloaders will give you a silent video. This app leverages `yt-dlp` and `ffmpeg` to securely intercept the separate video and audio streams, flawlessly mux them together into an MP4 container on the backend server, and pipe the finished product to you!
+- `src/app/page.tsx` - The main downloader interface.
+- `src/app/queue/page.tsx` - The background download queue monitor.
+- `src/app/library/page.tsx` - Your personal gallery of downloaded media.
+- `src/app/api/queue/route.ts` - The backend engine handling yt-dlp, format selection, and ffmpeg merging.
+- `data/` - Secure storage for the `db.json` database, your `instagram_cookies.txt`, and the `/library/` where all downloaded MP4s are saved.
+
+## 🛠️ Technology Stack
+
+- **Frontend:** Next.js (App Router), React 19, Lucide React Icons
+- **Backend:** Node.js, Next.js API Routes, Local JSON Database
+- **Extraction & Merging:** `youtube-dl-exec` (yt-dlp interface), `ffmpeg-static`
