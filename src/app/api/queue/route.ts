@@ -154,31 +154,34 @@ async function startDownload(id: string, url: string, type: string, quality: str
         isImage = true;
         updateQueueItem(id, { progress: 'Fetching Instagram image...' });
 
-        // Use the /embed/ endpoint which doesn't require auth and provides the raw image src
+        // Use instaloader python helper to get the raw image URL(s), supporting private posts and carousels
         const imageUrl = await (async () => {
           try {
-            const https = require('https');
+            const { exec } = require('child_process');
+            const { promisify } = require('util');
+            const execAsync = promisify(exec);
             
-            // Format URL to use embed endpoint
+            // Extract the shortcode from the URL
             const urlObj = new URL(url);
-            const embedUrl = `https://www.instagram.com${urlObj.pathname.replace(/\/$/, '')}/embed/`;
-
-            const response = await fetch(embedUrl, {
-              headers: {
-                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Microsoft Windows 10.0.19045; en-US) PowerShell/5.1.19045.4412',
-              }
-            });
-            const pageHtml = await response.text();
-
-            // Extract the direct CDN image URL from the embed HTML
-            const imgMatch = pageHtml.match(/class="EmbeddedMediaImage"[^>]+src="([^"]+)"/i) || pageHtml.match(/EmbeddedMediaImage[^>]+src="([^"]+)"/i);
+            const pathParts = urlObj.pathname.split('/').filter(Boolean);
+            const shortcodeIndex = pathParts.indexOf('p') > -1 ? pathParts.indexOf('p') + 1 : pathParts.indexOf('reel') > -1 ? pathParts.indexOf('reel') + 1 : 0;
+            const shortcode = pathParts[shortcodeIndex];
             
-            if (imgMatch) {
-              return imgMatch[1].replace(/&amp;/g, '&');
-            }
+            if (!shortcode) return null;
 
+            const helperPath = join(process.cwd(), 'instaloader_helper.py');
+            const cmd = hasCookies ? `python "${helperPath}" ${shortcode} "${cookiesPath}"` : `python "${helperPath}" ${shortcode}`;
+            
+            const { stdout } = await execAsync(cmd);
+            const result = JSON.parse(stdout);
+            
+            if (result.success && result.images && result.images.length > 0) {
+              // Just grab the first image for now to maintain single-file library structure
+              return result.images[0];
+            }
             return null;
           } catch (e) {
+            console.error("Instaloader helper failed:", e);
             return null;
           }
         })();
