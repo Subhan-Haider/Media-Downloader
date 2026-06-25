@@ -50,3 +50,35 @@ Open [http://localhost:3000](http://localhost:3000) in your browser to start dow
 - **Frontend:** Next.js (App Router), React 19, Lucide React Icons
 - **Backend:** Node.js, Next.js API Routes, Local JSON Database
 - **Extraction & Merging:** `youtube-dl-exec` (yt-dlp interface), `ffmpeg-static`, `instaloader` (Python)
+
+---
+
+## 🧠 How It Works (The Tri-Layer Extraction Engine)
+
+The backend uses a smart routing system to ensure your media is downloaded flawlessly. When you submit a URL, it goes through a multi-stage fallback process:
+
+```mermaid
+flowchart TD
+    A[User Submits URL] --> B{Is it a Video/Audio?}
+    B -- Yes --> C[yt-dlp Engine]
+    C --> D{Success?}
+    D -- Yes --> E[Merge with ffmpeg & Save]
+    D -- No --> F[Throw specific error]
+    
+    B -- No (It's an Image/Carousel) --> G[Instaloader Python Scraper]
+    G --> H{Rate Limited?}
+    H -- No --> I[Download High-Res Image]
+    H -- Yes --> J[Public Embed HTML Scraper]
+    J --> K{Image Found in DOM?}
+    K -- Yes --> I
+    K -- No --> L[Throw private account error]
+```
+
+---
+
+## ⚖️ Disclaimer
+
+**Educational Purposes Only.** This application is designed as a personal utility for downloading publicly available, non-copyrighted content or content you hold the rights to. 
+- You are solely responsible for ensuring that you do not violate the terms of service of YouTube, Instagram, or TikTok.
+- Do not use this tool to download copyrighted material without the explicit permission of the creator.
+- The developers of this tool are not responsible for any misuse, account bans, or copyright infringements caused by the user.
