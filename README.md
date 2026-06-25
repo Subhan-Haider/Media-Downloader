@@ -138,6 +138,3 @@ flowchart TD
 ## 🤝 Contributing
 Contributions, issues, and feature requests are welcome! 
 Feel free to check out the [issues page](https://github.com/Subhan-Haider/Media-Downloader/issues) if you want to contribute.
-
-## 📝 License
-This project is open-source and available under the [MIT License](LICENSE).
