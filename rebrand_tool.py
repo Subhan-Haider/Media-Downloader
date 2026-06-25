@@ -1,4 +1,5 @@
 import os
+import shutil
 import tkinter as tk
 from tkinter import messagebox, ttk, filedialog
 
@@ -13,7 +14,6 @@ def replace_in_files(project_dir, replacements):
         
         for file in files:
             ext = os.path.splitext(file)[1]
-            # Don't replace inside this script itself
             if ext in allowed_exts and file != "rebrand_tool.py":
                 filepath = os.path.join(root, file)
                 try:
@@ -34,11 +34,27 @@ def replace_in_files(project_dir, replacements):
                     
     return files_modified
 
+def replace_assets(project_dir, logo_path, favicon_path):
+    assets_replaced = 0
+    if logo_path and os.path.exists(logo_path):
+        target = os.path.join(project_dir, "public", "logo.png")
+        if os.path.exists(os.path.dirname(target)):
+            shutil.copy(logo_path, target)
+            assets_replaced += 1
+            
+    if favicon_path and os.path.exists(favicon_path):
+        target = os.path.join(project_dir, "src", "app", "icon.png")
+        if os.path.exists(os.path.dirname(target)):
+            shutil.copy(favicon_path, target)
+            assets_replaced += 1
+            
+    return assets_replaced
+
 class RebrandApp:
     def __init__(self, root):
         self.root = root
         self.root.title("Advanced Rebrander Tool")
-        self.root.geometry("750x650")
+        self.root.geometry("750x700")
         self.root.configure(padx=20, pady=20)
         
         # Header
@@ -46,7 +62,7 @@ class RebrandApp:
         
         # Path Selection Frame
         path_frame = ttk.Frame(self.root)
-        path_frame.pack(fill=tk.X, pady=(0, 20))
+        path_frame.pack(fill=tk.X, pady=(0, 10))
         
         ttk.Label(path_frame, text="Project Path:").pack(side=tk.LEFT, padx=(0, 10))
         self.path_entry = ttk.Entry(path_frame)
@@ -54,9 +70,26 @@ class RebrandApp:
         self.path_entry.insert(0, os.path.dirname(os.path.abspath(__file__)))
         ttk.Button(path_frame, text="Browse...", command=self.browse_path).pack(side=tk.LEFT)
         
-        # Scrollable Frame for Replacements
-        canvas = tk.Canvas(self.root, highlightthickness=0)
-        scrollbar = ttk.Scrollbar(self.root, orient="vertical", command=canvas.yview)
+        # Assets Frame
+        asset_frame = ttk.LabelFrame(self.root, text="Replace Assets (Optional)", padding=10)
+        asset_frame.pack(fill=tk.X, pady=(0, 20))
+        
+        ttk.Label(asset_frame, text="New Logo Image (PNG):").grid(row=0, column=0, sticky="e", padx=5, pady=5)
+        self.logo_entry = ttk.Entry(asset_frame, width=40)
+        self.logo_entry.grid(row=0, column=1, padx=5, pady=5)
+        ttk.Button(asset_frame, text="Browse Image", command=lambda: self.browse_file(self.logo_entry)).grid(row=0, column=2, padx=5, pady=5)
+        
+        ttk.Label(asset_frame, text="New App Icon/Favicon (PNG):").grid(row=1, column=0, sticky="e", padx=5, pady=5)
+        self.favicon_entry = ttk.Entry(asset_frame, width=40)
+        self.favicon_entry.grid(row=1, column=1, padx=5, pady=5)
+        ttk.Button(asset_frame, text="Browse Image", command=lambda: self.browse_file(self.favicon_entry)).grid(row=1, column=2, padx=5, pady=5)
+
+        # Scrollable Frame for Text Replacements
+        text_frame = ttk.LabelFrame(self.root, text="Text Replacements", padding=10)
+        text_frame.pack(fill=tk.BOTH, expand=True, pady=(0, 10))
+        
+        canvas = tk.Canvas(text_frame, highlightthickness=0)
+        scrollbar = ttk.Scrollbar(text_frame, orient="vertical", command=canvas.yview)
         self.scrollable_frame = ttk.Frame(canvas)
         
         self.scrollable_frame.bind(
@@ -86,18 +119,24 @@ class RebrandApp:
         
         # Buttons Frame
         btn_frame = ttk.Frame(self.root)
-        btn_frame.pack(fill=tk.X, pady=20)
+        btn_frame.pack(fill=tk.X, pady=10)
         
         ttk.Button(btn_frame, text="+ Add Custom Row", command=lambda: self.add_row("Custom:", "", "")).pack(side=tk.LEFT, padx=5)
         ttk.Button(btn_frame, text="Start Rebranding", command=self.on_rebrand, style="Accent.TButton").pack(side=tk.RIGHT, padx=5)
         
-        tk.Label(self.root, text="Note: This will scan all .ts, .tsx, .json, and .md files in the project.\nRestart the Next.js server after rebranding.", justify=tk.CENTER, fg="gray").pack()
+        tk.Label(self.root, text="Note: This will scan all text files and replace images globally.\nRestart the Next.js server after rebranding.", justify=tk.CENTER, fg="gray").pack()
 
     def browse_path(self):
         folder_selected = filedialog.askdirectory(initialdir=self.path_entry.get())
         if folder_selected:
             self.path_entry.delete(0, tk.END)
             self.path_entry.insert(0, folder_selected)
+            
+    def browse_file(self, entry_widget):
+        file_selected = filedialog.askopenfilename(filetypes=[("Image Files", "*.png;*.ico;*.jpg;*.jpeg")])
+        if file_selected:
+            entry_widget.delete(0, tk.END)
+            entry_widget.insert(0, file_selected)
 
     def add_row(self, label_text, default_old, default_new):
         ttk.Label(self.scrollable_frame, text=label_text).grid(row=self.row_count, column=0, sticky="e", padx=5, pady=5)
@@ -125,22 +164,23 @@ class RebrandApp:
             n = new_e.get()
             if o.strip() and n.strip():
                 replacements.append((o, n))
+                
+        logo_val = self.logo_entry.get().strip()
+        favicon_val = self.favicon_entry.get().strip()
         
-        if not replacements:
-            messagebox.showwarning("Warning", "Please fill in at least one Old and New value pair.")
+        if not replacements and not logo_val and not favicon_val:
+            messagebox.showwarning("Warning", "Please fill in at least one text replacement or select an image asset to replace.")
             return
             
-        confirm = messagebox.askyesno("Confirm", f"Are you sure you want to search and replace these values in:\n{project_dir}\n\nThis action cannot be undone.")
+        confirm = messagebox.askyesno("Confirm", f"Are you sure you want to search and replace these values and assets in:\n{project_dir}\n\nThis action cannot be undone.")
         if confirm:
-            count = replace_in_files(project_dir, replacements)
-            messagebox.showinfo("Success", f"Rebranding complete!\nModified {count} files.")
+            text_count = replace_in_files(project_dir, replacements) if replacements else 0
+            asset_count = replace_assets(project_dir, logo_val, favicon_val)
+            messagebox.showinfo("Success", f"Rebranding complete!\nModified {text_count} text files.\nReplaced {asset_count} image assets.")
 
 if __name__ == "__main__":
     root = tk.Tk()
-    
-    # Optional: Basic styling to make the primary button pop
     style = ttk.Style(root)
     style.configure("Accent.TButton", font=("Helvetica", 10, "bold"))
-    
     app = RebrandApp(root)
     root.mainloop()
