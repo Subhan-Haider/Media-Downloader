@@ -103,22 +103,15 @@ async function startDownload(id: string, url: string, type: string, quality: str
 
   // --- Instagram image post special handling ---
   if (isInstagram && !isAudio) {
+    let fallbackToImageScraper = false;
+
     try {
-      const metaOptions: any = {
-        dumpJson: true,
-        noWarnings: true,
-        noCallHome: true,
-        noCheckCertificates: true
-      };
-      if (hasCookies) {
-        metaOptions.cookies = cookiesPath;
-      } else if (browserAuth && browserAuth !== 'none') {
-        metaOptions.cookiesFromBrowser = browserAuth;
-      }
+      const metaOptions: any = { dumpJson: true, noWarnings: true, noCallHome: true, noCheckCertificates: true };
+      if (hasCookies) metaOptions.cookies = cookiesPath;
+      else if (browserAuth && browserAuth !== 'none') metaOptions.cookiesFromBrowser = browserAuth;
 
       const info = await youtubedl(url, metaOptions) as any;
 
-      // Update queue with real title/thumbnail
       const realTitle = info.title || info.description || info.fulltitle || 'Instagram Post';
       const realThumbnail = info.thumbnail || (info.thumbnails?.length > 0 ? info.thumbnails[0].url : undefined);
       updateQueueItem(id, {
@@ -127,74 +120,71 @@ async function startDownload(id: string, url: string, type: string, quality: str
         duration: String(info.duration || '')
       });
 
-      // Detect image post: no real video formats
       const hasVideo = info.formats?.some((f: any) => f.vcodec && f.vcodec !== 'none' && f.vcodec !== 'mhtml');
       if (!hasVideo || isImage || type === 'image') {
         isImage = true;
-        // Try to get the highest-res image URL from info
-        let imageUrl: string | null = null;
-        if (info.url && !/\.mp4/i.test(info.url)) {
-          imageUrl = info.url;
-        } else if (info.thumbnails?.length > 0) {
-          const sorted = [...info.thumbnails].sort((a: any, b: any) => (b.width || 0) - (a.width || 0));
-          imageUrl = sorted[0].url;
-        } else if (info.thumbnail) {
-          imageUrl = info.thumbnail;
-        }
-
-        if (imageUrl) {
-          await downloadImageUrl(id, imageUrl);
-          return;
-        }
+        fallbackToImageScraper = true; // Use instaloader for high-res images/carousels
       }
     } catch (e: any) {
       const errMsg: string = e?.message || e?.stderr || String(e);
       if (errMsg.toLowerCase().includes('no video') || errMsg.toLowerCase().includes('no video in this post')) {
-        // It's a photo post — yt-dlp can't handle it, scrape from Instagram embed endpoint
         isImage = true;
-        updateQueueItem(id, { progress: 'Fetching Instagram image...' });
-
-        // Use instaloader python helper to get the raw image URL(s), supporting private posts and carousels
-        const imageUrl = await (async () => {
-          try {
-            const { exec } = require('child_process');
-            const { promisify } = require('util');
-            const execAsync = promisify(exec);
-            
-            // Extract the shortcode from the URL
-            const urlObj = new URL(url);
-            const pathParts = urlObj.pathname.split('/').filter(Boolean);
-            const shortcodeIndex = pathParts.indexOf('p') > -1 ? pathParts.indexOf('p') + 1 : pathParts.indexOf('reel') > -1 ? pathParts.indexOf('reel') + 1 : 0;
-            const shortcode = pathParts[shortcodeIndex];
-            
-            if (!shortcode) return null;
-
-            const helperPath = join(process.cwd(), 'instaloader_helper.py');
-            const cmd = hasCookies ? `python "${helperPath}" ${shortcode} "${cookiesPath}"` : `python "${helperPath}" ${shortcode}`;
-            
-            const { stdout } = await execAsync(cmd);
-            const result = JSON.parse(stdout);
-            
-            if (result.success && result.images && result.images.length > 0) {
-              // Just grab the first image for now to maintain single-file library structure
-              return result.images[0];
-            }
-            return null;
-          } catch (e) {
-            console.error("Instaloader helper failed:", e);
-            return null;
-          }
-        })();
-
-        if (imageUrl) {
-          await downloadImageUrl(id, imageUrl);
-        } else {
-          updateQueueItem(id, { status: 'error', error: 'Could not fetch Instagram image. The post might be completely private or removed.' });
-        }
-        return;
+        fallbackToImageScraper = true;
+      } else {
+        console.warn(`Failed to fetch Instagram metadata for ${id}: ${errMsg}`);
       }
-      // Other error — log and fall through to normal download
-      console.warn(`Failed to fetch Instagram metadata for ${id}: ${errMsg}`);
+    }
+
+    if (fallbackToImageScraper) {
+      updateQueueItem(id, { progress: 'Fetching Instagram image...' });
+      let imageUrl: string | null = null;
+
+      // 1. Try Instaloader first (handles private and carousels well if cookies are present)
+      try {
+        const { exec } = require('child_process');
+        const { promisify } = require('util');
+        const execAsync = promisify(exec);
+        
+        const urlObj = new URL(url);
+        const pathParts = urlObj.pathname.split('/').filter(Boolean);
+        const shortcodeIndex = pathParts.indexOf('p') > -1 ? pathParts.indexOf('p') + 1 : pathParts.indexOf('reel') > -1 ? pathParts.indexOf('reel') + 1 : 0;
+        const shortcode = pathParts[shortcodeIndex];
+        
+        if (shortcode) {
+          const helperPath = join(process.cwd(), 'instaloader_helper.py');
+          const cmd = hasCookies ? `python "${helperPath}" ${shortcode} "${cookiesPath}"` : `python "${helperPath}" ${shortcode}`;
+          const { stdout } = await execAsync(cmd);
+          const result = JSON.parse(stdout);
+          if (result.success && result.images && result.images.length > 0) {
+            imageUrl = result.images[0];
+          }
+        }
+      } catch (e) {
+        console.error("Instaloader helper failed:", e);
+      }
+
+      // 2. Fallback to /embed/ endpoint if instaloader fails (e.g. no cookies and rate limited)
+      if (!imageUrl) {
+        try {
+          const urlObj = new URL(url);
+          const embedUrl = `https://www.instagram.com${urlObj.pathname.replace(/\/$/, '')}/embed/`;
+          const response = await fetch(embedUrl, {
+            headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Microsoft Windows 10.0.19045; en-US) PowerShell/5.1.19045.4412' }
+          });
+          const pageHtml = await response.text();
+          const imgMatch = pageHtml.match(/class="EmbeddedMediaImage"[^>]+src="([^"]+)"/i) || pageHtml.match(/EmbeddedMediaImage[^>]+src="([^"]+)"/i);
+          if (imgMatch) {
+            imageUrl = imgMatch[1].replace(/&amp;/g, '&');
+          }
+        } catch (e) {}
+      }
+
+      if (imageUrl) {
+        await downloadImageUrl(id, imageUrl);
+      } else {
+        updateQueueItem(id, { status: 'error', error: 'Could not fetch Instagram image. The post might be completely private or require login.' });
+      }
+      return; // Stop execution; we handled the image
     }
   } else {
     // Non-Instagram: regular metadata fetch
