@@ -127,7 +127,8 @@ async function startDownload(id: string, url: string, type: string, quality: str
       }
     } catch (e: any) {
       const errMsg: string = e?.message || e?.stderr || String(e);
-      if (errMsg.toLowerCase().includes('no video') || errMsg.toLowerCase().includes('no video in this post')) {
+      // If it explicitly failed because no video, OR the user explicitly requested an image, always use our scraper
+      if (errMsg.toLowerCase().includes('no video') || errMsg.toLowerCase().includes('no video in this post') || isImage || type === 'image') {
         isImage = true;
         fallbackToImageScraper = true;
       } else {
@@ -359,14 +360,19 @@ async function startDownload(id: string, url: string, type: string, quality: str
         try { fs.unlinkSync(vttPath); } catch(e) {}
       }
 
-      // If it's an image, update the filename in the queue to match the actual downloaded file
+      // Verify the file was actually downloaded (yt-dlp sometimes exits with 0 even on failure)
       if (isImage) {
         const imageFile = findImageFile();
         if (imageFile) {
           updateQueueItem(id, { filename: imageFile });
         } else {
-          updateQueueItem(id, { status: 'error', error: 'File was not downloaded (post may be private or require login).' });
+          updateQueueItem(id, { status: 'error', error: 'File was not downloaded. The post might be private, require login, or contain no media.' });
           return;
+        }
+      } else {
+        if (!fs.existsSync(finalMp4) && !fs.existsSync(finalMp3)) {
+           updateQueueItem(id, { status: 'error', error: lastError || 'File was not downloaded. The post might be private, require login, or contain no media.' });
+           return;
         }
       }
 
