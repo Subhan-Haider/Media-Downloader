@@ -1,7 +1,10 @@
 import os
 import shutil
-import tkinter as tk
-from tkinter import messagebox, ttk, filedialog
+import customtkinter as ctk
+from tkinter import filedialog, messagebox
+
+ctk.set_appearance_mode("System")  # Modes: "System" (standard), "Dark", "Light"
+ctk.set_default_color_theme("blue")  # Themes: "blue" (standard), "green", "dark-blue"
 
 def replace_in_files(project_dir, replacements):
     ignore_dirs = {'.git', '.next', 'node_modules', 'data', 'public', '.yarn'}
@@ -50,65 +53,72 @@ def replace_assets(project_dir, logo_path, favicon_path):
             
     return assets_replaced
 
-class RebrandApp:
-    def __init__(self, root):
-        self.root = root
-        self.root.title("Advanced Rebrander Tool")
-        self.root.geometry("750x700")
-        self.root.configure(padx=20, pady=20)
+class RebrandApp(ctk.CTk):
+    def __init__(self):
+        super().__init__()
+        
+        self.title("Ultimate Media Downloader - Rebrander")
+        self.geometry("900x750")
+        
+        # Configure grid layout
+        self.grid_columnconfigure(0, weight=1)
+        self.grid_rowconfigure(2, weight=1)
         
         # Header
-        tk.Label(self.root, text="Ultimate Media Downloader - Advanced Rebranding Tool", font=("Helvetica", 16, "bold")).pack(pady=(0, 20))
+        self.header_label = ctk.CTkLabel(self, text="Advanced Rebranding Tool", font=ctk.CTkFont(size=24, weight="bold"))
+        self.header_label.grid(row=0, column=0, padx=20, pady=(20, 10))
         
-        # Path Selection Frame
-        path_frame = ttk.Frame(self.root)
-        path_frame.pack(fill=tk.X, pady=(0, 10))
+        # Project Path
+        self.path_frame = ctk.CTkFrame(self)
+        self.path_frame.grid(row=1, column=0, padx=20, pady=(10, 10), sticky="ew")
+        self.path_frame.grid_columnconfigure(1, weight=1)
         
-        ttk.Label(path_frame, text="Project Path:").pack(side=tk.LEFT, padx=(0, 10))
-        self.path_entry = ttk.Entry(path_frame)
-        self.path_entry.pack(side=tk.LEFT, fill=tk.X, expand=True, padx=(0, 10))
+        self.path_label = ctk.CTkLabel(self.path_frame, text="Project Path:")
+        self.path_label.grid(row=0, column=0, padx=10, pady=10)
+        
+        self.path_entry = ctk.CTkEntry(self.path_frame)
+        self.path_entry.grid(row=0, column=1, padx=(0, 10), pady=10, sticky="ew")
         self.path_entry.insert(0, os.path.dirname(os.path.abspath(__file__)))
-        ttk.Button(path_frame, text="Browse...", command=self.browse_path).pack(side=tk.LEFT)
         
-        # Assets Frame
-        asset_frame = ttk.LabelFrame(self.root, text="Replace Assets (Optional)", padding=10)
-        asset_frame.pack(fill=tk.X, pady=(0, 20))
+        self.browse_btn = ctk.CTkButton(self.path_frame, text="Browse...", command=self.browse_path, width=100)
+        self.browse_btn.grid(row=0, column=2, padx=(0, 10), pady=10)
         
-        ttk.Label(asset_frame, text="New Logo Image (PNG):").grid(row=0, column=0, sticky="e", padx=5, pady=5)
-        self.logo_entry = ttk.Entry(asset_frame, width=40)
-        self.logo_entry.grid(row=0, column=1, padx=5, pady=5)
-        ttk.Button(asset_frame, text="Browse Image", command=lambda: self.browse_file(self.logo_entry)).grid(row=0, column=2, padx=5, pady=5)
+        # Scrollable Main Area
+        self.scrollable_frame = ctk.CTkScrollableFrame(self, label_text="Replacements & Assets")
+        self.scrollable_frame.grid(row=2, column=0, padx=20, pady=10, sticky="nsew")
+        self.scrollable_frame.grid_columnconfigure(1, weight=1)
+        self.scrollable_frame.grid_columnconfigure(2, weight=1)
         
-        ttk.Label(asset_frame, text="New App Icon/Favicon (PNG):").grid(row=1, column=0, sticky="e", padx=5, pady=5)
-        self.favicon_entry = ttk.Entry(asset_frame, width=40)
-        self.favicon_entry.grid(row=1, column=1, padx=5, pady=5)
-        ttk.Button(asset_frame, text="Browse Image", command=lambda: self.browse_file(self.favicon_entry)).grid(row=1, column=2, padx=5, pady=5)
-
-        # Scrollable Frame for Text Replacements
-        text_frame = ttk.LabelFrame(self.root, text="Text Replacements", padding=10)
-        text_frame.pack(fill=tk.BOTH, expand=True, pady=(0, 10))
+        # Assets Section
+        self.assets_label = ctk.CTkLabel(self.scrollable_frame, text="Image Assets (Optional)", font=ctk.CTkFont(size=16, weight="bold"))
+        self.assets_label.grid(row=0, column=0, columnspan=3, padx=10, pady=(10, 5), sticky="w")
         
-        canvas = tk.Canvas(text_frame, highlightthickness=0)
-        scrollbar = ttk.Scrollbar(text_frame, orient="vertical", command=canvas.yview)
-        self.scrollable_frame = ttk.Frame(canvas)
+        self.logo_label = ctk.CTkLabel(self.scrollable_frame, text="New Logo Image (PNG):")
+        self.logo_label.grid(row=1, column=0, padx=10, pady=5, sticky="e")
+        self.logo_entry = ctk.CTkEntry(self.scrollable_frame)
+        self.logo_entry.grid(row=1, column=1, padx=10, pady=5, sticky="ew")
+        self.logo_btn = ctk.CTkButton(self.scrollable_frame, text="Select File", command=lambda: self.browse_file(self.logo_entry), width=100)
+        self.logo_btn.grid(row=1, column=2, padx=10, pady=5, sticky="w")
         
-        self.scrollable_frame.bind(
-            "<Configure>",
-            lambda e: canvas.configure(scrollregion=canvas.bbox("all"))
-        )
+        self.icon_label = ctk.CTkLabel(self.scrollable_frame, text="New App Icon (PNG):")
+        self.icon_label.grid(row=2, column=0, padx=10, pady=5, sticky="e")
+        self.icon_entry = ctk.CTkEntry(self.scrollable_frame)
+        self.icon_entry.grid(row=2, column=1, padx=10, pady=5, sticky="ew")
+        self.icon_btn = ctk.CTkButton(self.scrollable_frame, text="Select File", command=lambda: self.browse_file(self.icon_entry), width=100)
+        self.icon_btn.grid(row=2, column=2, padx=10, pady=5, sticky="w")
         
-        canvas.create_window((0, 0), window=self.scrollable_frame, anchor="nw")
-        canvas.configure(yscrollcommand=scrollbar.set)
+        # Text Replacement Section
+        self.text_label = ctk.CTkLabel(self.scrollable_frame, text="Text Replacements", font=ctk.CTkFont(size=16, weight="bold"))
+        self.text_label.grid(row=3, column=0, columnspan=3, padx=10, pady=(20, 5), sticky="w")
         
-        canvas.pack(side=tk.TOP, fill=tk.BOTH, expand=True)
-        scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
+        self.hdr1 = ctk.CTkLabel(self.scrollable_frame, text="Label", font=ctk.CTkFont(weight="bold"))
+        self.hdr1.grid(row=4, column=0, padx=10, pady=5)
+        self.hdr2 = ctk.CTkLabel(self.scrollable_frame, text="Old Value (To Replace)", font=ctk.CTkFont(weight="bold"))
+        self.hdr2.grid(row=4, column=1, padx=10, pady=5)
+        self.hdr3 = ctk.CTkLabel(self.scrollable_frame, text="New Value", font=ctk.CTkFont(weight="bold"))
+        self.hdr3.grid(row=4, column=2, padx=10, pady=5)
         
-        # Grid Headers
-        ttk.Label(self.scrollable_frame, text="Label", font=("Helvetica", 10, "bold")).grid(row=0, column=0, padx=5, pady=5, sticky="w")
-        ttk.Label(self.scrollable_frame, text="Old Value (To Replace)", font=("Helvetica", 10, "bold")).grid(row=0, column=1, padx=5, pady=5)
-        ttk.Label(self.scrollable_frame, text="New Value", font=("Helvetica", 10, "bold")).grid(row=0, column=2, padx=5, pady=5)
-        
-        self.row_count = 1
+        self.row_count = 5
         self.entries = []
         
         # Default Fields
@@ -117,37 +127,43 @@ class RebrandApp:
         self.add_row("Github URL:", "https://github.com/Subhan-Haider/Media-Downloader", "")
         self.add_row("Author Name:", "Subhan-Haider", "")
         
-        # Buttons Frame
-        btn_frame = ttk.Frame(self.root)
-        btn_frame.pack(fill=tk.X, pady=10)
+        # Footer
+        self.footer_frame = ctk.CTkFrame(self, fg_color="transparent")
+        self.footer_frame.grid(row=3, column=0, padx=20, pady=(10, 20), sticky="ew")
+        self.footer_frame.grid_columnconfigure(1, weight=1)
         
-        ttk.Button(btn_frame, text="+ Add Custom Row", command=lambda: self.add_row("Custom:", "", "")).pack(side=tk.LEFT, padx=5)
-        ttk.Button(btn_frame, text="Start Rebranding", command=self.on_rebrand, style="Accent.TButton").pack(side=tk.RIGHT, padx=5)
+        self.add_btn = ctk.CTkButton(self.footer_frame, text="+ Add Custom Row", command=lambda: self.add_row("Custom:", "", ""), fg_color="transparent", border_width=2, text_color=("gray10", "#DCE4EE"))
+        self.add_btn.grid(row=0, column=0, padx=0, pady=0, sticky="w")
         
-        tk.Label(self.root, text="Note: This will scan all text files and replace images globally.\nRestart the Next.js server after rebranding.", justify=tk.CENTER, fg="gray").pack()
+        self.rebrand_btn = ctk.CTkButton(self.footer_frame, text="Start Rebranding", command=self.on_rebrand, height=40, font=ctk.CTkFont(weight="bold"))
+        self.rebrand_btn.grid(row=0, column=2, padx=0, pady=0, sticky="e")
+        
+        self.note = ctk.CTkLabel(self, text="Note: Restart the Next.js server after rebranding.", text_color="gray")
+        self.note.grid(row=4, column=0, pady=(0, 10))
 
     def browse_path(self):
         folder_selected = filedialog.askdirectory(initialdir=self.path_entry.get())
         if folder_selected:
-            self.path_entry.delete(0, tk.END)
+            self.path_entry.delete(0, 'end')
             self.path_entry.insert(0, folder_selected)
             
     def browse_file(self, entry_widget):
         file_selected = filedialog.askopenfilename(filetypes=[("Image Files", "*.png;*.ico;*.jpg;*.jpeg")])
         if file_selected:
-            entry_widget.delete(0, tk.END)
+            entry_widget.delete(0, 'end')
             entry_widget.insert(0, file_selected)
 
     def add_row(self, label_text, default_old, default_new):
-        ttk.Label(self.scrollable_frame, text=label_text).grid(row=self.row_count, column=0, sticky="e", padx=5, pady=5)
+        lbl = ctk.CTkLabel(self.scrollable_frame, text=label_text)
+        lbl.grid(row=self.row_count, column=0, padx=10, pady=5, sticky="e")
         
-        old_entry = ttk.Entry(self.scrollable_frame, width=35)
+        old_entry = ctk.CTkEntry(self.scrollable_frame)
         old_entry.insert(0, default_old)
-        old_entry.grid(row=self.row_count, column=1, padx=5, pady=5)
+        old_entry.grid(row=self.row_count, column=1, padx=10, pady=5, sticky="ew")
         
-        new_entry = ttk.Entry(self.scrollable_frame, width=35)
+        new_entry = ctk.CTkEntry(self.scrollable_frame)
         new_entry.insert(0, default_new)
-        new_entry.grid(row=self.row_count, column=2, padx=5, pady=5)
+        new_entry.grid(row=self.row_count, column=2, padx=10, pady=5, sticky="ew")
         
         self.entries.append((old_entry, new_entry))
         self.row_count += 1
@@ -166,7 +182,7 @@ class RebrandApp:
                 replacements.append((o, n))
                 
         logo_val = self.logo_entry.get().strip()
-        favicon_val = self.favicon_entry.get().strip()
+        favicon_val = self.icon_entry.get().strip()
         
         if not replacements and not logo_val and not favicon_val:
             messagebox.showwarning("Warning", "Please fill in at least one text replacement or select an image asset to replace.")
@@ -179,8 +195,5 @@ class RebrandApp:
             messagebox.showinfo("Success", f"Rebranding complete!\nModified {text_count} text files.\nReplaced {asset_count} image assets.")
 
 if __name__ == "__main__":
-    root = tk.Tk()
-    style = ttk.Style(root)
-    style.configure("Accent.TButton", font=("Helvetica", 10, "bold"))
-    app = RebrandApp(root)
-    root.mainloop()
+    app = RebrandApp()
+    app.mainloop()
