@@ -1,3 +1,7 @@
+<div align="center">
+  <img src="public/logo.png" alt="Ultimate Media Downloader Logo" width="200" />
+</div>
+
 # Ultimate Media Downloader
 
 A modern, high-performance web application that allows you to easily download media from **YouTube**, **Instagram**, and **TikTok**. Built with Next.js, React, and `yt-dlp`, this application features a beautiful UI, a background download queue, and a persistent media library.
