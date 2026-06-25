@@ -38,6 +38,50 @@ Open [http://localhost:3000](http://localhost:3000) in your browser to start dow
 
 ---
 
+## 🌍 Deployment & Advanced Server Usage
+
+If you want to run this application permanently on a Linux server (like an Ubuntu VPS) or run it on a different port, follow these steps:
+
+### Running Continuously with PM2
+To keep the app running in the background even after you close your SSH terminal, use `pm2`.
+
+1. Install PM2 globally:
+   ```bash
+   npm install -g pm2
+   ```
+2. Build the app for production:
+   ```bash
+   npm run build
+   ```
+3. Start the app with PM2:
+   ```bash
+   pm2 start npm --name "media-downloader" -- run start
+   ```
+4. Configure PM2 to start on server boot:
+   ```bash
+   pm2 startup
+   pm2 save
+   ```
+
+### Changing the Port
+By default, Next.js runs on port `3000`. If you want to change the port (e.g., to port `8080`), you can pass the port flag when starting the app:
+
+**For Development:**
+```bash
+npm run dev -- -p 8080
+```
+
+**For Production / PM2:**
+```bash
+# Start directly
+npm run start -- -p 8080
+
+# Or start with PM2
+pm2 start npm --name "media-downloader" -- run start -- -p 8080
+```
+
+---
+
 ## 📂 Project Structure
 
 - `src/app/page.tsx` - The main downloader interface.
