@@ -17,11 +17,13 @@ A modern, high-performance web application that allows you to easily download me
 
 ### 1. Prerequisites
 Make sure you have [Node.js](https://nodejs.org/) installed on your machine.
+You must also have **Python (3.7+)** installed on your system to use the advanced Instagram image scraper.
 
 ### 2. Installation
-Clone or download this repository, then open your terminal in the project folder and install dependencies:
+Clone or download this repository, then open your terminal in the project folder and install the Node and Python dependencies:
 ```bash
 npm install
+pip install instaloader
 ```
 
 ### 3. Setting Up Instagram Authentication (Important!)
@@ -53,7 +55,6 @@ Open [http://localhost:3000](http://localhost:3000) in your browser to start dow
 - `data/` - Secure storage for the `db.json` database, your `instagram_cookies.txt`, and the `/library/` where all downloaded MP4s are saved.
 
 ## 🛠️ Technology Stack
-
 - **Frontend:** Next.js (App Router), React 19, Lucide React Icons
 - **Backend:** Node.js, Next.js API Routes, Local JSON Database
-- **Extraction & Merging:** `youtube-dl-exec` (yt-dlp interface), `ffmpeg-static`
+- **Extraction & Merging:** `youtube-dl-exec` (yt-dlp interface), `ffmpeg-static`, `instaloader` (Python)
