@@ -82,8 +82,8 @@ class RebrandApp(ctk.CTk):
         super().__init__()
         
         self.title("Ultimate Media Downloader - Rebrander")
-        self.geometry("950x850")
-        self.minsize(800, 750)
+        self.geometry("200x600")
+        self.minsize(600, 500)
         
         # Configure grid layout
         self.grid_columnconfigure(0, weight=1)
