@@ -23,7 +23,13 @@ Make sure you have [Node.js](https://nodejs.org/) installed on your machine.
 You must also have **Python (3.7+)** installed on your system to use the advanced Instagram image scraper.
 
 ### 2. Installation
-Clone or download this repository, then open your terminal in the project folder and install the Node and Python dependencies:
+Clone this repository to your local machine:
+```bash
+git clone https://github.com/Subhan-Haider/Media-Downloader.git
+cd Media-Downloader
+```
+
+Then, install the required Node and Python dependencies:
 ```bash
 npm install
 pip install instaloader
@@ -126,3 +132,12 @@ flowchart TD
 - You are solely responsible for ensuring that you do not violate the terms of service of YouTube, Instagram, or TikTok.
 - Do not use this tool to download copyrighted material without the explicit permission of the creator.
 - The developers of this tool are not responsible for any misuse, account bans, or copyright infringements caused by the user.
+
+---
+
+## 🤝 Contributing
+Contributions, issues, and feature requests are welcome! 
+Feel free to check out the [issues page](https://github.com/Subhan-Haider/Media-Downloader/issues) if you want to contribute.
+
+## 📝 License
+This project is open-source and available under the [MIT License](LICENSE).
