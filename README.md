@@ -89,7 +89,9 @@ pm2 start npm --name "media-downloader" -- run start -- -p 8080
 ### 🎨 Rebranding Tool (Customizer)
 Want to change the app name, description, or GitHub links to your own? We've included a standalone Windows graphical tool that automatically finds and replaces branding strings across the entire project safely!
 
-[Download Rebrand Tool from Microsoft Store](https://apps.microsoft.com/detail/9P3HKF1XTMW2?hl=en&gl=CA&ocid=pdpshare)
+<a href="https://apps.microsoft.com/detail/9P3HKF1XTMW2?hl=en&gl=CA&ocid=pdpshare">
+  <img src="https://get.microsoft.com/images/en-us%20dark.svg" width="200" alt="Get it from Microsoft"/>
+</a>
 
 1. Download or locate `RebrandTool.exe` in the root of the repository.
 2. Double-click the `.exe` file to open the modern UI.
