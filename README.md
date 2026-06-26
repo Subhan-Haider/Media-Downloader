@@ -83,11 +83,12 @@ After deleting it, restart your Next.js dev server, and the warning should be go
 
 If you want to run this application permanently on a Linux server (like an Ubuntu VPS) or run it on a different port, follow these steps:
 
-### Full Server Installation Script (Copy & Paste)
-Run this entire block in your server's terminal from inside the `Media-Downloader` directory to install dependencies, build the app, and start it in the background:
+### Full Server Installation & Update Script (Copy & Paste)
+Run this entire block in your server's terminal from inside the `Media-Downloader` directory to pull the latest code, install dependencies, build the app, and restart it in the background:
 
 ```bash
-# 1. Install Node.js dependencies
+# 1. Pull the latest code and install Node.js dependencies
+git pull
 npm install
 
 # 2. Delete any existing Python venv & Next.js cache to prevent Turbopack crash
