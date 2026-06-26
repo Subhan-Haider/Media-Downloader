@@ -65,3 +65,7 @@ FocusFlow/dist/
 # Python Virtual Environments
 venv/
 .venv/
+
+# Environment secrets
+.env.local
+.env*.local

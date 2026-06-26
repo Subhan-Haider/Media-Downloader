@@ -6,6 +6,7 @@ import { randomBytes } from 'crypto';
 import fs from 'fs';
 import os from 'os';
 import { spawn } from 'child_process';
+import { notifyDiscord } from '@/lib/discord';
 
 const ffmpegPathGlobal = join(process.cwd(), 'node_modules', 'ffmpeg-static', 'ffmpeg' + (os.platform() === 'win32' ? '.exe' : ''));
 
@@ -64,10 +65,14 @@ export async function GET() {
 }
 
 export async function DELETE(request: Request) {
-  const url = new URL(request.url);
-  const id = url.searchParams.get('id');
+  const urlObj = new URL(request.url);
+  const id = urlObj.searchParams.get('id');
   if (id) {
+    const db = readDB();
+    const item = db.queue.find(i => i.id === id);
     updateQueueItem(id, { status: 'error', error: 'Cancelled by user', progress: 'Cancelled' });
+    // 🔔 Discord: Cancelled notification
+    notifyDiscord({ event: 'cancelled', title: item?.title || 'Unknown', url: item?.url || '', id, type: item?.filename?.endsWith('.mp3') ? 'audio' : 'video' }).catch(() => {});
     return NextResponse.json({ success: true });
   }
   clearErrorsFromQueue();
@@ -88,7 +93,6 @@ export async function POST(request: Request) {
     const isImage = type === 'image';
     const containerExt = isAudio ? 'mp3' : isImage ? 'jpg' : 'mp4';
     
-    // In a real app we'd fetch the title first, but for speed we can let yt-dlp determine it or use a generic one
     const item = {
       id,
       url,
@@ -99,6 +103,9 @@ export async function POST(request: Request) {
     };
     
     addToQueue(item);
+
+    // 🔔 Discord: Queued notification
+    notifyDiscord({ event: 'queued', title: 'Fetching metadata...', url, id, type, quality }).catch(() => {});
 
     // Kick off background download
     startDownload(id, url, type, quality, embedSubs, browserAuth).catch(err => {
@@ -164,6 +171,8 @@ async function startDownload(id: string, url: string, type: string, quality: str
   const ffmpegPath = join(process.cwd(), 'node_modules', 'ffmpeg-static', 'ffmpeg' + (platform === 'win32' ? '.exe' : ''));
 
   updateQueueItem(id, { status: 'downloading', progress: 'Fetching metadata...' });
+  // 🔔 Discord: Started notification
+  notifyDiscord({ event: 'started', title: 'Fetching metadata...', url, id, type }).catch(() => {});
 
   // --- Direct Image URL Special Handling ---
   if (url.match(/\.(jpg|jpeg|png|webp|gif|avif)(\?.*)?$/i) || url.includes('preview.redd.it') || url.includes('i.redd.it')) {
@@ -518,6 +527,7 @@ async function startDownload(id: string, url: string, type: string, quality: str
       return null;
     };
 
+    let currentTitle = 'Unknown';
     const handleSuccess = () => {
       // Parse the generated .info.json to ensure we capture the title even if the initial dumpJson failed
       const infoPath = outputPath.replace('.%(ext)s', '.info.json');
@@ -525,10 +535,11 @@ async function startDownload(id: string, url: string, type: string, quality: str
         try {
           const infoData = JSON.parse(fs.readFileSync(infoPath, 'utf8'));
           const realTitle = infoData.title || infoData.description || infoData.fulltitle || 'Unknown Video';
+          currentTitle = realTitle.length > 100 ? realTitle.substring(0, 100) + '...' : realTitle;
           const realThumbnail = infoData.thumbnail || (infoData.thumbnails && infoData.thumbnails.length > 0 ? infoData.thumbnails[0].url : undefined);
           
           updateQueueItem(id, {
-            title: realTitle.length > 100 ? realTitle.substring(0, 100) + '...' : realTitle,
+            title: currentTitle,
             thumbnail: realThumbnail,
             duration: String(infoData.duration || '')
           });
@@ -543,8 +554,21 @@ async function startDownload(id: string, url: string, type: string, quality: str
       }
 
       const finishUp = async (filePath: string) => {
+        notifyDiscord({ event: 'watermark', title: currentTitle, url, id, type: isAudio ? 'audio' : isImage ? 'image' : 'video' }).catch(() => {});
         await applyWatermarkPromise(filePath, id);
         moveToLibrary(id);
+        // 🔔 Discord: Completed notification
+        const finalDb = readDB();
+        const finalItem = finalDb.library.find(i => i.id === id);
+        notifyDiscord({
+          event: 'completed',
+          title: finalItem?.title || currentTitle,
+          url,
+          id,
+          type: isAudio ? 'audio' : isImage ? 'image' : 'video',
+          thumbnail: finalItem?.thumbnail,
+          duration: finalItem?.duration,
+        }).catch(() => {});
       };
 
       // Verify the file was actually downloaded
@@ -600,7 +624,10 @@ async function startDownload(id: string, url: string, type: string, quality: str
     if (code === 0 || fs.existsSync(finalMp4) || fs.existsSync(finalMp3) || (isImage && findImageFile())) {
       handleSuccess();
     } else {
-      updateQueueItem(id, { status: 'error', error: lastError || `Exited with code ${code}` });
+      const errMsg = lastError || `Exited with code ${code}`;
+      updateQueueItem(id, { status: 'error', error: errMsg });
+      // 🔔 Discord: Error notification
+      notifyDiscord({ event: 'error', title: currentTitle, url, id, type: isAudio ? 'audio' : isImage ? 'image' : 'video', errorMessage: errMsg }).catch(() => {});
     }
   });
 }
