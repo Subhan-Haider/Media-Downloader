@@ -41,16 +41,17 @@ export default async function SharedMediaPage({ params }: { params: Promise<{ id
       
       {/* Clean Transparent Header */}
       <header style={{ padding: '1.5rem 2rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between', zIndex: 50 }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-          <img src="/logo.png" alt="Logo" style={{ width: '100px', height: 'auto', dropShadow: '0 4px 6px rgba(0,0,0,0.1)' }} />
-          <span style={{ 
-            fontWeight: 800, 
-            fontSize: '2rem', 
-            letterSpacing: '-0.03em', 
-            color: 'var(--foreground)'
-          }}>
-            Media Downloader
-          </span>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+          <img src="/logo.png" alt="Logo" style={{ width: '80px', height: 'auto', dropShadow: '0 4px 6px rgba(0,0,0,0.1)' }} />
+          <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+            <div style={{ fontWeight: 900, fontSize: '1.75rem', letterSpacing: '0.02em', lineHeight: 1, textTransform: 'uppercase' }}>
+              <span style={{ color: 'var(--foreground)' }}>MEDIA</span>
+              <span style={{ color: '#2563eb', marginLeft: '0.4rem' }}>DOWNLOADER</span>
+            </div>
+            <div style={{ fontWeight: 700, fontSize: '0.65rem', letterSpacing: '0.4em', color: 'var(--foreground)', opacity: 0.7, textTransform: 'uppercase', marginTop: '0.3rem' }}>
+              SECURE FILE SHARE
+            </div>
+          </div>
         </div>
         <Link 
           href="/library" 
