@@ -58,7 +58,7 @@ function applyWatermarkPromise(filePath: string, id: string): Promise<void> {
 }
 
 export async function GET() {
-  cleanupOldMedia(2); // Auto-delete files older than 2 days
+  cleanupOldMedia(); // Auto-delete files based on settings
   const db = readDB();
   return NextResponse.json({ queue: db.queue });
 }
