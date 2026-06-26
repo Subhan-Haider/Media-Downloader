@@ -107,12 +107,17 @@ export default function LibraryPage() {
             const isImage = ['.jpg', '.jpeg', '.png', '.webp', '.avif', '.gif'].some(ext => file.endsWith(ext));
 
             if (isAudio) {
+              const item = library.find(i => i.id === playingId);
               return (
                 <div style={{ padding: '3rem 2rem', background: 'linear-gradient(145deg, var(--hover) 0%, var(--card-bg) 100%)', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '1.5rem' }}>
-                  <div style={{ width: '80px', height: '80px', borderRadius: '50%', background: 'var(--primary)', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 10px 20px rgba(var(--primary-rgb), 0.3)' }}>
-                    <Music size={40} color="white" />
-                  </div>
-                  <h3 style={{ margin: 0, fontSize: '1.25rem', textAlign: 'center', color: 'var(--foreground)' }}>{library.find(i => i.id === playingId)?.title}</h3>
+                  {item?.thumbnail ? (
+                    <img src={item.thumbnail} alt="Cover" style={{ width: '220px', height: '220px', objectFit: 'cover', borderRadius: '16px', boxShadow: '0 10px 40px rgba(0,0,0,0.4)' }} />
+                  ) : (
+                    <div style={{ width: '120px', height: '120px', background: 'var(--primary)', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 10px 30px rgba(0,0,0,0.2)' }}>
+                      <Music size={50} color="white" />
+                    </div>
+                  )}
+                  <h3 style={{ margin: 0, fontSize: '1.25rem', textAlign: 'center', color: 'var(--foreground)' }}>{item?.title}</h3>
                   <audio src={`/api/media/${playingId}`} controls autoPlay style={{ width: '100%', maxWidth: '600px', height: '54px', borderRadius: '8px' }} />
                 </div>
               );
@@ -139,7 +144,7 @@ export default function LibraryPage() {
 
             return (
               <div style={{ width: '100%', background: '#050505', display: 'flex', justifyContent: 'center', position: 'relative' }}>
-                <video src={`/api/media/${playingId}`} controls autoPlay style={{ width: '100%', maxHeight: '70vh' }} />
+                <video src={`/api/media/${playingId}`} poster={library.find(i => i.id === playingId)?.thumbnail} controls autoPlay style={{ width: '100%', maxHeight: '70vh' }} />
                 <div style={{
                   position: 'absolute',
                   bottom: '45px',
