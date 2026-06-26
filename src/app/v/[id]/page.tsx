@@ -143,6 +143,28 @@ export default async function SharedMediaPage({ params }: { params: Promise<{ id
           </div>
         </div>
 
+        {/* QR Code Section */}
+        <div style={{ marginTop: '2rem', maxWidth: '850px', width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '2rem', padding: '1.5rem 2rem', background: 'var(--card-bg)', border: '1px solid var(--border)', borderRadius: '16px', flexWrap: 'wrap' }}>
+          <div style={{ flexShrink: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.75rem' }}>
+            <img
+              src={`https://api.qrserver.com/v1/create-qr-code/?size=140x140&margin=8&color=4f46e5&bgcolor=ffffff&data=https://media.subhan.tech/v/${item.id}`}
+              alt="QR Code"
+              width={140}
+              height={140}
+              style={{ borderRadius: '12px', border: '1px solid var(--border)' }}
+            />
+            <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', fontWeight: 600, letterSpacing: '0.05em', textTransform: 'uppercase' }}>Scan to open</span>
+          </div>
+          <div style={{ flex: 1, minWidth: '200px' }}>
+            <div style={{ fontWeight: 700, fontSize: '1.1rem', color: 'var(--foreground)', marginBottom: '0.4rem' }}>
+              📱 Open on your phone
+            </div>
+            <p style={{ margin: 0, fontSize: '0.9rem', color: 'var(--text-muted)', lineHeight: 1.6 }}>
+              Scan this QR code with your phone camera to instantly open and download this media file on any device — no typing required.
+            </p>
+          </div>
+        </div>
+
         {/* Disclaimer Box */}
         <div style={{ marginTop: '2.5rem', maxWidth: '850px', padding: '1.25rem 2rem', background: 'rgba(239, 68, 68, 0.05)', border: '1px solid rgba(239, 68, 68, 0.2)', borderRadius: '12px', display: 'flex', alignItems: 'center', gap: '1.25rem', color: 'var(--text-muted)' }}>
           <Info size={28} color="#ef4444" style={{ flexShrink: 0 }} />
