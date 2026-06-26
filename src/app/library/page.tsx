@@ -131,7 +131,7 @@ export default function LibraryPage() {
                     opacity: 0.85,
                     zIndex: 10
                   }}>
-                    <img src="/icon.png" alt="" style={{ width: '80px', height: 'auto', filter: 'drop-shadow(0 4px 6px rgba(0,0,0,0.5))' }} />
+                    <img src="/watermark.png" alt="" style={{ width: '80px', height: 'auto', filter: 'drop-shadow(0 4px 6px rgba(0,0,0,0.5))' }} />
                   </div>
                 </div>
               );
