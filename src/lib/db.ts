@@ -95,3 +95,38 @@ export function clearErrorsFromQueue() {
   db.queue = db.queue.filter(i => i.status !== 'error' && i.status !== 'completed');
   writeDB(db);
 }
+
+export function cleanupOldMedia(days = 2) {
+  const db = readDB();
+  const now = Date.now();
+  const threshold = days * 24 * 60 * 60 * 1000;
+  let changed = false;
+
+  const filterOld = (item: MediaItem) => {
+    if (now - item.addedAt > threshold) {
+      if (item.filename) {
+        const filePath = path.join(process.cwd(), 'data', 'library', item.filename);
+        if (fs.existsSync(filePath)) {
+          try { fs.unlinkSync(filePath); } catch(e) {}
+        }
+      }
+      changed = true;
+      return false;
+    }
+    return true;
+  };
+
+  db.library = db.library.filter(filterOld);
+  
+  db.queue = db.queue.filter(item => {
+    if ((item.status === 'completed' || item.status === 'error') && (now - item.addedAt > threshold)) {
+      changed = true;
+      return false;
+    }
+    return true;
+  });
+
+  if (changed) {
+    writeDB(db);
+  }
+}

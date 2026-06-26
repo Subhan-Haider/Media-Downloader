@@ -167,13 +167,32 @@ export default function LibraryPage() {
               onMouseLeave={(e) => e.currentTarget.style.transform = 'scale(1)'}
             >
               <div style={{ position: 'relative', paddingTop: '56.25%', background: '#000' }}>
-                {item.thumbnail ? (
-                  <img src={item.thumbnail} alt={item.title} style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', objectFit: 'cover' }} />
-                ) : (
-                  <div style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                    <Play size={40} opacity={0.5} />
-                  </div>
-                )}
+                {(() => {
+                  const isImageFile = item.filename && ['.jpg', '.jpeg', '.png', '.webp', '.avif', '.gif'].some(ext => item.filename.toLowerCase().endsWith(ext));
+                  const isVideoFile = item.filename && ['.mp4', '.webm', '.mkv', '.mov'].some(ext => item.filename.toLowerCase().endsWith(ext));
+                  
+                  if (isImageFile) {
+                    return <img src={`/api/media/${item.id}`} alt={item.title} style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', objectFit: 'cover' }} />;
+                  }
+
+                  if (isVideoFile) {
+                    return (
+                      <>
+                        <video src={`/api/media/${item.id}#t=0.1`} preload="metadata" style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', objectFit: 'cover' }} muted playsInline />
+                        <div style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(0,0,0,0.2)' }}>
+                          <Play size={40} color="white" opacity={0.9} />
+                        </div>
+                      </>
+                    );
+                  }
+                  
+                  // Fallback for audio or unknown
+                  return (
+                    <div style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                      <Play size={40} opacity={0.5} />
+                    </div>
+                  );
+                })()}
                 <div style={{ position: 'absolute', bottom: '0.5rem', right: '0.5rem', background: 'rgba(0,0,0,0.8)', padding: '0.2rem 0.5rem', borderRadius: '4px', fontSize: '0.8rem' }}>
                   {item.filename.split('.').pop()?.toUpperCase()}
                 </div>

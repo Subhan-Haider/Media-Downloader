@@ -1,7 +1,8 @@
 import { NextResponse } from 'next/server';
-import { readDB } from '@/lib/db';
+import { readDB, cleanupOldMedia } from '@/lib/db';
 
 export async function GET() {
+  cleanupOldMedia(2); // Auto-delete files older than 2 days
   const db = readDB();
   return NextResponse.json({ library: db.library });
 }

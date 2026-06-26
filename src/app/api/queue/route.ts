@@ -1,10 +1,11 @@
 import { NextResponse } from 'next/server';
-import { addToQueue, updateQueueItem, moveToLibrary, readDB, clearErrorsFromQueue } from '@/lib/db';
+import { addToQueue, updateQueueItem, moveToLibrary, readDB, clearErrorsFromQueue, cleanupOldMedia } from '@/lib/db';
 import youtubedl from 'youtube-dl-exec';
 import { join } from 'path';
 import { randomBytes } from 'crypto';
 
 export async function GET() {
+  cleanupOldMedia(2); // Auto-delete files older than 2 days
   const db = readDB();
   return NextResponse.json({ queue: db.queue });
 }
