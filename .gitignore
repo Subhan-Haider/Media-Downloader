@@ -61,3 +61,7 @@ test*.mkv
 
 # Electron build output
 FocusFlow/dist/
+
+# Python Virtual Environments
+venv/
+.venv/
