@@ -16,7 +16,7 @@ function applyWatermarkPromise(filePath: string, id: string): Promise<void> {
     
     if (!isVideo && !isImage) return resolve();
 
-    const logoPath = join(process.cwd(), 'src', 'app', 'icon.png');
+    const logoPath = join(process.cwd(), 'public', 'watermark.png');
     if (!fs.existsSync(logoPath) || !fs.existsSync(ffmpegPathGlobal)) return resolve();
 
     updateQueueItem(id, { progress: 'Applying Watermark (this takes time)...' });
