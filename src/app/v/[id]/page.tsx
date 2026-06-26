@@ -63,7 +63,7 @@ export default async function SharedMediaPage({ params }: { params: Promise<{ id
       </header>
 
       {/* Main Content (Clean Theme-Matched Layout) */}
-      <main style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '1rem 2rem 4rem 2rem' }}>
+      <main style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '1rem 2rem 1rem 2rem' }}>
         
         <div style={{ 
           width: '100%', 
