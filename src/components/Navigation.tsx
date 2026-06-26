@@ -3,9 +3,34 @@
 import Link from 'next/link';
 import { Download, ListMusic, Tv, Rss } from 'lucide-react';
 import { usePathname } from 'next/navigation';
+import { useEffect, useState } from 'react';
 
 export default function Navigation() {
   const pathname = usePathname();
+  const [visible, setVisible] = useState(true);
+  const [lastScrollY, setLastScrollY] = useState(0);
+
+  useEffect(() => {
+    const handleScroll = () => {
+      const currentY = window.scrollY;
+
+      // Always show when near the top (within 60px)
+      if (currentY < 60) {
+        setVisible(true);
+      } else if (currentY < lastScrollY) {
+        // Scrolling UP — show
+        setVisible(true);
+      } else {
+        // Scrolling DOWN — hide
+        setVisible(false);
+      }
+
+      setLastScrollY(currentY);
+    };
+
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, [lastScrollY]);
 
   // Hide navigation on public share pages
   if (pathname?.startsWith('/v/')) {
@@ -30,6 +55,16 @@ export default function Navigation() {
           box-sizing: border-box;
           max-width: 100vw;
           overflow: hidden;
+          transition: transform 0.35s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.35s ease;
+        }
+        .nav-wrapper.hidden {
+          transform: translateY(-120%);
+          opacity: 0;
+          pointer-events: none;
+        }
+        .nav-wrapper.visible {
+          transform: translateY(0);
+          opacity: 1;
         }
         .nav-pill {
           display: flex;
@@ -68,7 +103,6 @@ export default function Navigation() {
           display: inline;
         }
 
-        /* Tablet — slightly smaller text */
         @media (max-width: 640px) {
           .nav-item {
             padding: 0.5rem 0.85rem;
@@ -80,7 +114,6 @@ export default function Navigation() {
           }
         }
 
-        /* Mobile — icons only, no labels */
         @media (max-width: 430px) {
           .nav-label {
             display: none;
@@ -94,7 +127,7 @@ export default function Navigation() {
           }
         }
       `}</style>
-      <nav className="nav-wrapper">
+      <nav className={`nav-wrapper ${visible ? 'visible' : 'hidden'}`}>
         <div className="glass-panel nav-pill">
           <Link href="/" className={`nav-item${isActive('/') ? ' active' : ''}`}>
             <Download size={20} />
