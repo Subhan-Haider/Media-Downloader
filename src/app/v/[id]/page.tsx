@@ -55,12 +55,12 @@ export default async function SharedMediaPage({ params }: { params: Promise<{ id
         </a>
       </header>
 
-      {/* Main Content (Hug Media Layout) */}
+      {/* Main Content (Wide Layout) */}
       <main style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '3rem 1rem' }}>
         
         <div style={{ 
-          width: isAudioFile ? '450px' : 'fit-content', 
-          maxWidth: '100%', 
+          width: '100%', 
+          maxWidth: '1000px', 
           background: 'white', 
           borderRadius: '16px', 
           overflow: 'hidden', 
