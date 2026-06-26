@@ -40,7 +40,7 @@ export default async function SharedMediaPage({ params }: { params: Promise<{ id
     <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', background: 'transparent', color: 'var(--foreground)', fontFamily: 'inherit' }}>
       
       {/* Clean Transparent Header */}
-      <header style={{ padding: '1.5rem 2rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between', zIndex: 50 }}>
+      <header style={{ padding: '1.5rem 2rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '1rem', zIndex: 50 }}>
         <Link href="/" style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', textDecoration: 'none', cursor: 'pointer' }}>
           <img src="/logo.png" alt="Logo" style={{ width: '80px', height: 'auto', dropShadow: '0 4px 6px rgba(0,0,0,0.1)' }} />
           <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
@@ -119,13 +119,13 @@ export default async function SharedMediaPage({ params }: { params: Promise<{ id
           </div>
           
           {/* Media Info Footer Panel */}
-          <div style={{ padding: '2rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderTop: '1px solid var(--border)' }}>
+          <div style={{ padding: '2rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '1.5rem', borderTop: '1px solid var(--border)' }}>
             
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', flex: 1, minWidth: 0 }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', flex: '1 1 300px', minWidth: 0 }}>
               <h1 style={{ margin: 0, fontSize: '1.4rem', fontWeight: 600, lineHeight: 1.3, color: 'var(--foreground)' }}>
                 {item.title}
               </h1>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', color: 'var(--text-muted)', fontSize: '0.9rem', fontWeight: 500 }}>
+              <div style={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: '1rem', color: 'var(--text-muted)', fontSize: '0.9rem', fontWeight: 500 }}>
                 <span style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', background: 'var(--hover)', padding: '0.3rem 0.8rem', borderRadius: '8px' }}><ShieldCheck size={16} /> Securely Shared</span>
                 <span style={{ background: 'var(--hover)', padding: '0.3rem 0.8rem', borderRadius: '8px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>{ext.split('.').pop()} FILE</span>
               </div>
@@ -134,7 +134,7 @@ export default async function SharedMediaPage({ params }: { params: Promise<{ id
             <a 
               href={`/api/media/${item.id}?download=true`} 
               download 
-              style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem', background: 'var(--primary)', color: 'white', padding: '0.75rem 1.5rem', borderRadius: '12px', textDecoration: 'none', fontWeight: 600, fontSize: '1rem', transition: 'background 0.2s', boxShadow: '0 4px 12px -2px rgba(79, 70, 229, 0.3)', flexShrink: 0, marginLeft: '1.5rem' }}
+              style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem', background: 'var(--primary)', color: 'white', padding: '0.75rem 1.5rem', borderRadius: '12px', textDecoration: 'none', fontWeight: 600, fontSize: '1rem', transition: 'background 0.2s', boxShadow: '0 4px 12px -2px rgba(79, 70, 229, 0.3)', flexShrink: 0, flexGrow: 1, textAlign: 'center', maxWidth: '300px' }}
             >
               <Download size={18} />
               Save File
@@ -155,7 +155,7 @@ export default async function SharedMediaPage({ params }: { params: Promise<{ id
       {/* Minimal Footer for Public Share Page */}
       <footer style={{ padding: '2rem', textAlign: 'center', color: 'var(--text-muted)', fontSize: '0.85rem', fontWeight: 500 }}>
         <div>&copy; {new Date().getFullYear()} Media Downloader. All rights reserved.</div>
-        <div style={{ marginTop: '0.75rem', display: 'flex', justifyContent: 'center', gap: '1.5rem' }}>
+        <div style={{ marginTop: '0.75rem', display: 'flex', justifyContent: 'center', flexWrap: 'wrap', gap: '1.5rem' }}>
           <Link href="/privacy" style={{ color: 'var(--text-muted)', textDecoration: 'none', transition: 'color 0.2s' }}>Privacy Policy</Link>
           <Link href="/terms" style={{ color: 'var(--text-muted)', textDecoration: 'none', transition: 'color 0.2s' }}>Terms of Service</Link>
         </div>
