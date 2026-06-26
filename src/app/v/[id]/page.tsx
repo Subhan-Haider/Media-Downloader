@@ -41,11 +41,11 @@ export default async function SharedMediaPage({ params }: { params: Promise<{ id
       
       {/* Clean Transparent Header */}
       <header style={{ padding: '1.5rem 2rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between', zIndex: 50 }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-          <img src="/logo.png" alt="Logo" style={{ width: '70px', height: 'auto', dropShadow: '0 4px 6px rgba(0,0,0,0.1)' }} />
+        <div style={{ display: 'flex', alignItems: 'center', gap: '1.25rem' }}>
+          <img src="/logo.png" alt="Logo" style={{ width: '100px', height: 'auto', dropShadow: '0 4px 6px rgba(0,0,0,0.1)' }} />
           <span style={{ 
             fontWeight: 900, 
-            fontSize: '2rem', 
+            fontSize: '2.5rem', 
             letterSpacing: '-0.03em', 
             background: 'linear-gradient(135deg, #2563eb 0%, #9333ea 50%, #db2777 100%)',
             WebkitBackgroundClip: 'text',
