@@ -88,7 +88,7 @@ export default async function SharedMediaPage({ params }: { params: Promise<{ id
                     <Music size={48} color="var(--text-muted)" />
                   </div>
                 )}
-                <audio src={`/api/media/${item.id}`} controls autoPlay style={{ width: '100%', maxWidth: '500px', height: '44px' }} />
+                <audio src={`/api/media/${item.id}`} controls autoPlay style={{ width: '100%', maxWidth: '600px', height: '54px', transform: 'scale(1.15)', transformOrigin: 'center', marginTop: '1rem' }} />
               </div>
             )}
           </div>
