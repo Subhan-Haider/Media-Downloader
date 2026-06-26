@@ -7,6 +7,7 @@ import { Play, Download, Trash2, X, ArrowUpRight, Wand2, Music, Volume2 } from '
 export default function LibraryPage() {
   const [library, setLibrary] = useState<MediaItem[]>([]);
   const [playingId, setPlayingId] = useState<string | null>(null);
+  const [filter, setFilter] = useState<'All' | 'Video' | 'Audio' | 'Image'>('All');
 
   useEffect(() => {
     const fetchLibrary = async () => {
@@ -18,6 +19,20 @@ export default function LibraryPage() {
     };
     fetchLibrary();
   }, []);
+
+  const filteredLibrary = library.filter(item => {
+    if (filter === 'All') return true;
+    if (!item.filename) return false;
+    const ext = item.filename.toLowerCase();
+    const isImageFile = ['.jpg', '.jpeg', '.png', '.webp', '.avif', '.gif'].some(e => ext.endsWith(e));
+    const isAudioFile = ['.mp3', '.m4a'].some(e => ext.endsWith(e));
+    const isVideoFile = ['.mp4', '.webm', '.mkv', '.mov'].some(e => ext.endsWith(e));
+
+    if (filter === 'Image') return isImageFile;
+    if (filter === 'Audio') return isAudioFile;
+    if (filter === 'Video') return isVideoFile;
+    return true;
+  });
 
   return (
     <div style={{ maxWidth: '1200px', margin: '0 auto' }}>
@@ -83,12 +98,37 @@ export default function LibraryPage() {
           <div style={{ fontWeight: 700, fontSize: '1rem', marginBottom: '0.15rem' }}>
             Need to convert your image format?
           </div>
-          <div style={{ fontSize: '0.875rem', color: 'var(--text-muted)' }}>
-            Visit our free Image Converter — JPG, PNG, WebP, AVIF &amp; more. No upload limits.
+          <div style={{ color: 'var(--text-muted)', fontSize: '0.85rem' }}>
+            Visit our free Image Converter — No download limits, AVIF & more supported!
           </div>
         </div>
-        <ArrowUpRight size={20} style={{ color: 'var(--text-muted)', flexShrink: 0 }} />
+        <ArrowUpRight size={20} color="var(--text-muted)" />
       </a>
+
+      {/* Filters */}
+      {library.length > 0 && (
+        <div style={{ display: 'flex', gap: '0.75rem', marginBottom: '2rem', overflowX: 'auto', paddingBottom: '0.5rem' }}>
+          {(['All', 'Video', 'Audio', 'Image'] as const).map(f => (
+            <button
+              key={f}
+              onClick={() => setFilter(f)}
+              style={{
+                padding: '0.5rem 1.25rem',
+                borderRadius: '9999px',
+                border: 'none',
+                background: filter === f ? 'var(--primary)' : 'var(--card-bg)',
+                color: filter === f ? 'white' : 'var(--foreground)',
+                fontWeight: 600,
+                cursor: 'pointer',
+                transition: 'all 0.2s',
+                boxShadow: filter === f ? '0 4px 12px rgba(var(--primary-rgb, 0, 112, 243), 0.3)' : 'none'
+              }}
+            >
+              {f === 'All' ? 'All' : f + 's'}
+            </button>
+          ))}
+        </div>
+      )}
 
       {playingId && (
         <div style={{
@@ -193,8 +233,8 @@ export default function LibraryPage() {
                 padding: '0.7rem 1.25rem', background: 'transparent', color: '#ef4444', border: '1px solid rgba(239, 68, 68, 0.3)',
                 cursor: 'pointer', fontWeight: 500, borderRadius: '9999px', fontSize: '0.9rem', transition: 'all 0.2s'
               }}
-              onMouseEnter={e => { e.currentTarget.style.background = 'rgba(239, 68, 68, 0.1)'; e.currentTarget.style.borderColor = '#ef4444'; }}
-              onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.borderColor = 'rgba(239, 68, 68, 0.3)'; }}
+              onMouseEnter={e => { e.currentTarget.style.background = 'rgba(239, 68, 68, 0.1)' }}
+              onMouseLeave={e => { e.currentTarget.style.background = 'transparent' }}
             >
               <Trash2 size={18} />
               Delete
@@ -207,8 +247,8 @@ export default function LibraryPage() {
                 padding: '0.7rem 1.25rem', background: 'var(--hover)', color: 'var(--foreground)', border: 'none',
                 cursor: 'pointer', fontWeight: 500, borderRadius: '9999px', fontSize: '0.9rem', transition: 'all 0.2s'
               }}
-              onMouseEnter={e => { e.currentTarget.style.background = 'var(--border)'; }}
-              onMouseLeave={e => { e.currentTarget.style.background = 'var(--hover)'; }}
+              onMouseEnter={e => { e.currentTarget.style.background = 'var(--border)' }}
+              onMouseLeave={e => { e.currentTarget.style.background = 'var(--hover)' }}
             >
               <X size={18} />
               Close
@@ -217,13 +257,13 @@ export default function LibraryPage() {
         </div>
       )}
 
-      {library.length === 0 ? (
+      {filteredLibrary.length === 0 ? (
         <div style={{ padding: '3rem', textAlign: 'center', background: 'var(--card-bg)', borderRadius: '12px' }}>
-          <p style={{ color: 'var(--text-muted)' }}>Your library is empty. Go download something!</p>
+          <p style={{ color: 'var(--text-muted)' }}>{filter === 'All' ? 'Your library is empty. Go download something!' : `You don't have any downloaded ${filter.toLowerCase()}s.`}</p>
         </div>
       ) : (
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(250px, 1fr))', gap: '1.5rem' }}>
-          {library.map(item => {
+          {filteredLibrary.map(item => {
             const isPlaying = item.id === playingId;
             return (
             <div
