@@ -119,8 +119,10 @@ export async function GET(request: Request) {
           ? 'bestvideo[height<=1080][ext=mp4]+bestaudio[ext=m4a]/best[height<=1080][ext=mp4]/best'
           : `${itag}+bestaudio[ext=m4a]/${itag}`;
 
+      const os = require('os');
       const fs = require('fs');
-      const ffmpegPath = require('ffmpeg-static');
+      const platform = os.platform();
+      const ffmpegPath = join(process.cwd(), 'node_modules', 'ffmpeg-static', 'ffmpeg' + (platform === 'win32' ? '.exe' : ''));
 
       const options: any = {
         f: formatString,
