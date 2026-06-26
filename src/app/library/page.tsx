@@ -2,12 +2,14 @@
 
 import { useEffect, useState } from 'react';
 import type { MediaItem } from '@/lib/db';
-import { Play, Download, Trash2, X, ArrowUpRight, Wand2, Music, Volume2, Share2 } from 'lucide-react';
+import { Play, Download, Trash2, X, ArrowUpRight, Wand2, Music, Volume2, Share2, Settings } from 'lucide-react';
 
 export default function LibraryPage() {
   const [library, setLibrary] = useState<MediaItem[]>([]);
   const [playingId, setPlayingId] = useState<string | null>(null);
   const [filter, setFilter] = useState<'All' | 'Video' | 'Audio' | 'Image'>('All');
+  const [showSettings, setShowSettings] = useState(false);
+  const [autoDeleteDays, setAutoDeleteDays] = useState<number>(2);
 
   useEffect(() => {
     const fetchLibrary = async () => {
@@ -17,8 +19,25 @@ export default function LibraryPage() {
         setLibrary(data.library || []);
       } catch (e) { }
     };
+    const fetchSettings = async () => {
+      try {
+        const res = await fetch('/api/settings');
+        const data = await res.json();
+        if (data.settings) setAutoDeleteDays(data.settings.autoDeleteDays);
+      } catch(e) { }
+    };
     fetchLibrary();
+    fetchSettings();
   }, []);
+
+  const saveSettings = async (days: number) => {
+    setAutoDeleteDays(days);
+    await fetch('/api/settings', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ settings: { autoDeleteDays: days } })
+    });
+  };
 
   const filteredLibrary = library.filter(item => {
     if (filter === 'All') return true;
@@ -38,28 +57,71 @@ export default function LibraryPage() {
     <div style={{ maxWidth: '1200px', margin: '0 auto' }}>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '2rem' }}>
         <h1 style={{ fontSize: '2rem', margin: 0 }}>Media Library</h1>
-        {library.length > 0 && (
+        <div style={{ display: 'flex', gap: '1rem', position: 'relative' }}>
           <button
-            onClick={async () => {
-              if (confirm('Are you sure you want to permanently delete ALL videos from your library? This cannot be undone.')) {
-                await fetch('/api/library', { method: 'DELETE' });
-                setLibrary([]);
-                setPlayingId(null);
-              }
-            }}
+            onClick={() => setShowSettings(!showSettings)}
             style={{
-              padding: '0.6rem 1.2rem', borderRadius: '8px', border: '1px solid var(--border)',
-              background: 'var(--card-bg)', color: '#ef4444', cursor: 'pointer',
-              fontWeight: 500, fontSize: '0.9rem', transition: 'background 0.2s',
-              display: 'flex', alignItems: 'center', gap: '0.5rem'
+              padding: '0.6rem', borderRadius: '8px', border: '1px solid var(--border)',
+              background: showSettings ? 'var(--hover)' : 'var(--card-bg)', color: 'var(--foreground)', cursor: 'pointer',
+              display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'background 0.2s'
             }}
-            onMouseEnter={e => e.currentTarget.style.background = 'rgba(239, 68, 68, 0.1)'}
-            onMouseLeave={e => e.currentTarget.style.background = 'var(--card-bg)'}
           >
-            <Trash2 size={16} />
-            Clear Library
+            <Settings size={20} />
           </button>
-        )}
+
+          {showSettings && (
+            <div style={{
+              position: 'absolute', top: '100%', right: '120px', marginTop: '0.5rem',
+              background: 'var(--card-bg)', border: '1px solid var(--border)', borderRadius: '12px',
+              padding: '1rem', width: '250px', zIndex: 50, boxShadow: '0 10px 40px rgba(0,0,0,0.5)'
+            }}>
+              <h3 style={{ margin: '0 0 1rem 0', fontSize: '1rem' }}>Storage Settings</h3>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                <label style={{ fontSize: '0.9rem', color: 'var(--text-muted)' }}>Auto-Delete Files After:</label>
+                <select
+                  value={autoDeleteDays}
+                  onChange={(e) => saveSettings(Number(e.target.value))}
+                  style={{
+                    padding: '0.5rem', background: 'var(--hover)', color: 'var(--foreground)',
+                    border: '1px solid var(--border)', borderRadius: '6px', width: '100%'
+                  }}
+                >
+                  <option value={0}>Never (Keep Forever)</option>
+                  <option value={1}>1 Day</option>
+                  <option value={2}>2 Days</option>
+                  <option value={7}>7 Days</option>
+                  <option value={30}>30 Days</option>
+                </select>
+                <p style={{ margin: '0.5rem 0 0 0', fontSize: '0.8rem', color: 'var(--text-muted)' }}>
+                  This affects all downloaded videos, audios, and images to save server space.
+                </p>
+              </div>
+            </div>
+          )}
+
+          {library.length > 0 && (
+            <button
+              onClick={async () => {
+                if (confirm('Are you sure you want to permanently delete ALL videos from your library? This cannot be undone.')) {
+                  await fetch('/api/library', { method: 'DELETE' });
+                  setLibrary([]);
+                  setPlayingId(null);
+                }
+              }}
+              style={{
+                padding: '0.6rem 1.2rem', borderRadius: '8px', border: '1px solid var(--border)',
+                background: 'var(--card-bg)', color: '#ef4444', cursor: 'pointer',
+                fontWeight: 500, fontSize: '0.9rem', transition: 'background 0.2s',
+                display: 'flex', alignItems: 'center', gap: '0.5rem'
+              }}
+              onMouseEnter={e => e.currentTarget.style.background = 'rgba(239, 68, 68, 0.1)'}
+              onMouseLeave={e => e.currentTarget.style.background = 'var(--card-bg)'}
+            >
+              <Trash2 size={16} />
+              Clear Library
+            </button>
+          )}
+        </div>
       </div>
 
       {/* Image Converter Promo Banner */}

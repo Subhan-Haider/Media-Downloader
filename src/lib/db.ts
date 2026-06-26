@@ -27,12 +27,18 @@ export interface DatabaseSchema {
   queue: MediaItem[];
   library: MediaItem[];
   subscriptions: Subscription[];
+  settings: {
+    autoDeleteDays: number; // 0 means disabled
+  };
 }
 
 const defaultSchema: DatabaseSchema = {
   queue: [],
   library: [],
   subscriptions: [],
+  settings: {
+    autoDeleteDays: 2,
+  }
 };
 
 // Ensure db exists
@@ -96,8 +102,12 @@ export function clearErrorsFromQueue() {
   writeDB(db);
 }
 
-export function cleanupOldMedia(days = 2) {
+export function cleanupOldMedia() {
   const db = readDB();
+  const days = db.settings?.autoDeleteDays ?? 2;
+  
+  if (days <= 0) return; // Disabled
+
   const now = Date.now();
   const threshold = days * 24 * 60 * 60 * 1000;
   let changed = false;
