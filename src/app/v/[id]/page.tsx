@@ -59,7 +59,7 @@ export default async function SharedMediaPage({ params }: { params: Promise<{ id
         
         <div style={{ 
           width: '100%', 
-          maxWidth: '1000px', 
+          maxWidth: '1200px', 
           background: 'var(--card-bg)', 
           borderRadius: '24px', 
           overflow: 'hidden', 
@@ -87,15 +87,15 @@ export default async function SharedMediaPage({ params }: { params: Promise<{ id
             )}
             
             {isAudioFile && (
-              <div style={{ padding: '4rem 2rem', width: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '2rem' }}>
+              <div style={{ padding: '5rem 2rem', width: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '3rem' }}>
                 {item.thumbnail ? (
-                  <img src={item.thumbnail} alt="Cover" style={{ width: '250px', height: '250px', objectFit: 'cover', borderRadius: '16px', boxShadow: '0 10px 20px -5px rgba(0, 0, 0, 0.1)' }} />
+                  <img src={item.thumbnail} alt="Cover" style={{ width: '350px', height: '350px', objectFit: 'cover', borderRadius: '24px', boxShadow: '0 15px 30px -5px rgba(0, 0, 0, 0.15)' }} />
                 ) : (
-                  <div style={{ width: '150px', height: '150px', background: 'var(--border)', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                    <Music size={48} color="var(--text-muted)" />
+                  <div style={{ width: '200px', height: '200px', background: 'var(--border)', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <Music size={64} color="var(--text-muted)" />
                   </div>
                 )}
-                <audio src={`/api/media/${item.id}`} controls autoPlay style={{ width: '100%', maxWidth: '600px', height: '54px', transform: 'scale(1.15)', transformOrigin: 'center', marginTop: '1rem' }} />
+                <audio src={`/api/media/${item.id}`} controls autoPlay style={{ width: '100%', maxWidth: '800px', height: '54px', transform: 'scale(1.25)', transformOrigin: 'center', marginTop: '1.5rem' }} />
               </div>
             )}
           </div>
