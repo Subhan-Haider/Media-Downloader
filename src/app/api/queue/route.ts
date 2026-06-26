@@ -224,7 +224,38 @@ async function startDownload(id: string, url: string, type: string, quality: str
         thumbnail: realThumbnail,
         duration: String(info.duration || '')
       });
-    } catch (e) {
+    } catch (e: any) {
+      const errMsg: string = e?.message || e?.stderr || String(e);
+      
+      if ((url.includes('twitter.com') || url.includes('x.com')) && (errMsg.toLowerCase().includes('no video') || type === 'image')) {
+        updateQueueItem(id, { progress: 'Fetching Twitter image...' });
+        try {
+          const urlObj = new URL(url);
+          const pathParts = urlObj.pathname.split('/');
+          const statusIndex = pathParts.indexOf('status');
+          if (statusIndex !== -1 && pathParts.length > statusIndex + 1) {
+            const tweetId = pathParts[statusIndex + 1].split('?')[0];
+            const res = await fetch(`https://cdn.syndication.twimg.com/tweet-result?id=${tweetId}&token=1`);
+            if (res.ok) {
+              const data = await res.json();
+              if (data && data.photos && data.photos.length > 0) {
+                const imageUrl = data.photos[0].url;
+                await downloadImageUrl(id, imageUrl);
+                updateQueueItem(id, {
+                  title: data.text ? data.text.substring(0, 100) + '...' : 'Twitter Image',
+                  thumbnail: imageUrl
+                });
+                return; // Stop execution, image downloaded successfully
+              }
+            }
+          }
+        } catch (err) {
+          console.error("Twitter image fallback failed:", err);
+        }
+        updateQueueItem(id, { status: 'error', error: 'Could not fetch image from this Tweet.' });
+        return;
+      }
+      
       console.warn(`Failed to fetch metadata for ${id}, continuing anyway...`);
     }
   }

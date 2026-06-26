@@ -28,6 +28,29 @@ export async function GET(request: Request) {
   const safeTitle = encodeURIComponent(title.replace(/[/\\?%*:|"<>]/g, '-'));
 
   try {
+    if (itag === 'image' && (url.includes('twitter.com') || url.includes('x.com'))) {
+      const urlObj = new URL(url);
+      const pathParts = urlObj.pathname.split('/');
+      const statusIndex = pathParts.indexOf('status');
+      if (statusIndex !== -1 && pathParts.length > statusIndex + 1) {
+        const tweetId = pathParts[statusIndex + 1].split('?')[0];
+        const res = await fetch(`https://cdn.syndication.twimg.com/tweet-result?id=${tweetId}&token=1`);
+        if (res.ok) {
+          const data = await res.json();
+          if (data && data.photos && data.photos.length > 0) {
+            const imageUrl = data.photos[0].url;
+            const imageRes = await fetch(imageUrl);
+            if (imageRes.ok && imageRes.body) {
+              const headers = new Headers(imageRes.headers);
+              headers.set('Content-Disposition', `attachment; filename="${safeTitle}.jpg"`);
+              return new NextResponse(imageRes.body as any, { headers });
+            }
+          }
+        }
+      }
+      throw new Error('Failed to fetch Twitter image');
+    }
+
     // If itag is 'best', mergeAudio is true, or extractAudio is true, we use temp file
     if (itag === 'best' || mergeAudio || extractAudio) {
       const tempId = id || randomBytes(16).toString('hex');
