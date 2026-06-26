@@ -37,83 +37,122 @@ export default async function SharedMediaPage({ params }: { params: Promise<{ id
   const isVideoFile = ['.mp4', '.webm', '.mkv', '.mov'].some(e => ext.endsWith(e));
 
   return (
-    <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', background: 'var(--background, #f8fafc)', color: 'var(--foreground, #0f172a)', fontFamily: 'inherit' }}>
+    <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', background: '#050505', color: '#ffffff', fontFamily: 'system-ui, -apple-system, sans-serif', position: 'relative', overflow: 'hidden' }}>
       
-      {/* Clean Transparent Header */}
-      <header style={{ padding: '1.5rem 2rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between', zIndex: 50 }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-          <img src="/watermark.png" alt="Logo" style={{ width: '32px', height: 'auto', opacity: 0.9 }} />
-          <span style={{ fontWeight: 700, fontSize: '1.25rem', letterSpacing: '-0.02em' }}>Media Downloader</span>
+      {/* Cinematic Blurred Background */}
+      {item.thumbnail && (
+        <div style={{
+          position: 'absolute', top: '-10%', left: '-10%', width: '120%', height: '120%',
+          backgroundImage: `url('${item.thumbnail}')`, backgroundSize: 'cover', backgroundPosition: 'center',
+          filter: 'blur(100px) saturate(150%) brightness(0.3)', zIndex: 0, opacity: 0.8,
+          pointerEvents: 'none'
+        }} />
+      )}
+      
+      {/* Subtle Gradient Overlay for Depth */}
+      <div style={{ position: 'absolute', inset: 0, background: 'radial-gradient(circle at 50% 0%, rgba(255,255,255,0.05) 0%, transparent 70%)', zIndex: 1, pointerEvents: 'none' }} />
+
+      {/* Floating Minimal Header */}
+      <header style={{ padding: '2rem 3rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between', zIndex: 50, position: 'relative' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', opacity: 0.8, transition: 'opacity 0.2s', cursor: 'pointer' }}>
+          <img src="/watermark.png" alt="Logo" style={{ width: '28px', height: 'auto', filter: 'brightness(0) invert(1)' }} />
+          <span style={{ fontWeight: 600, fontSize: '1.1rem', letterSpacing: '0.05em', textTransform: 'uppercase' }}>Media Downloader</span>
         </div>
       </header>
 
-      {/* Main Content (Horizontal Layout) */}
-      <main style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '1rem 2rem 4rem 2rem' }}>
+      {/* Main Content Area */}
+      <main style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '0 2rem 4rem 2rem', zIndex: 10, position: 'relative' }}>
         
+        {/* Dynamic Media Container (Auto-scales based on content) */}
         <div style={{ 
+          display: 'flex', 
+          justifyContent: 'center', 
+          alignItems: 'center', 
           width: '100%', 
-          maxWidth: '1200px', 
-          background: 'var(--card-bg, rgba(255, 255, 255, 0.7))', 
-          borderRadius: '24px', 
-          overflow: 'hidden', 
-          border: '1px solid var(--border, rgba(0, 0, 0, 0.1))', 
-          boxShadow: '0 20px 40px -15px rgba(0, 0, 0, 0.05)',
-          display: 'flex',
-          flexWrap: 'wrap',
-          minHeight: '65vh',
-          backdropFilter: 'blur(10px)'
+          maxWidth: isAudioFile ? '500px' : '1000px', 
+          position: 'relative' 
         }}>
           
-          {/* Media Player Area */}
-          <div style={{ flex: '2 1 600px', background: 'rgba(0,0,0,0.02)', display: 'flex', justifyContent: 'center', position: 'relative' }}>
-            {isImageFile && (
-              <img src={`/api/media/${item.id}`} alt={item.title} style={{ display: 'block', maxWidth: '100%', maxHeight: '75vh', objectFit: 'contain' }} />
-            )}
-            
-            {isVideoFile && (
-              <video 
-                src={`/api/media/${item.id}`} 
-                poster={item.thumbnail} 
-                controls 
-                autoPlay 
-                style={{ display: 'block', width: '100%', maxHeight: '75vh' }} 
-              />
-            )}
-            
-            {isAudioFile && (
-              <div style={{ padding: '4rem 2rem', width: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '2rem' }}>
-                {item.thumbnail ? (
-                  <img src={item.thumbnail} alt="Cover" style={{ width: '250px', height: '250px', objectFit: 'cover', borderRadius: '16px', boxShadow: '0 10px 20px -5px rgba(0, 0, 0, 0.1)' }} />
-                ) : (
-                  <div style={{ width: '150px', height: '150px', background: 'var(--border, rgba(0, 0, 0, 0.1))', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                    <Music size={48} color="var(--text-muted, #64748b)" />
-                  </div>
-                )}
-                <audio src={`/api/media/${item.id}`} controls autoPlay style={{ width: '100%', maxWidth: '400px', height: '44px' }} />
-              </div>
-            )}
+          {isImageFile && (
+            <img src={`/api/media/${item.id}`} alt={item.title} style={{ display: 'block', maxWidth: '100%', maxHeight: '65vh', objectFit: 'contain', borderRadius: '16px', boxShadow: '0 30px 60px rgba(0,0,0,0.5)', border: '1px solid rgba(255,255,255,0.1)' }} />
+          )}
+          
+          {isVideoFile && (
+            <video 
+              src={`/api/media/${item.id}`} 
+              poster={item.thumbnail} 
+              controls 
+              autoPlay 
+              style={{ display: 'block', maxWidth: '100%', maxHeight: '65vh', borderRadius: '16px', boxShadow: '0 30px 60px rgba(0,0,0,0.6)', border: '1px solid rgba(255,255,255,0.1)', backgroundColor: '#000' }} 
+            />
+          )}
+          
+          {isAudioFile && (
+            <div style={{ padding: '3rem', width: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '2.5rem', background: 'rgba(255,255,255,0.03)', backdropFilter: 'blur(30px)', borderRadius: '24px', border: '1px solid rgba(255,255,255,0.1)', boxShadow: '0 20px 50px rgba(0,0,0,0.4)' }}>
+              {item.thumbnail ? (
+                <img src={item.thumbnail} alt="Cover" style={{ width: '220px', height: '220px', objectFit: 'cover', borderRadius: '50%', boxShadow: '0 20px 40px rgba(0,0,0,0.5)', border: '4px solid rgba(255,255,255,0.05)', animation: 'spin 20s linear infinite' }} />
+              ) : (
+                <div style={{ width: '180px', height: '180px', background: 'linear-gradient(135deg, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0) 100%)', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 20px 40px rgba(0,0,0,0.3)', border: '1px solid rgba(255,255,255,0.05)' }}>
+                  <Music size={64} color="rgba(255,255,255,0.5)" />
+                </div>
+              )}
+              <audio src={`/api/media/${item.id}`} controls autoPlay style={{ width: '100%', height: '48px', filter: 'invert(1) hue-rotate(180deg)', opacity: 0.8 }} />
+            </div>
+          )}
+        </div>
+        
+        {/* Glassmorphism Info Dashboard */}
+        <div style={{ 
+          marginTop: '3rem',
+          width: '100%', 
+          maxWidth: isAudioFile ? '500px' : '800px', 
+          background: 'rgba(255, 255, 255, 0.03)', 
+          backdropFilter: 'blur(20px)',
+          WebkitBackdropFilter: 'blur(20px)',
+          borderRadius: '24px', 
+          padding: '2rem 2.5rem',
+          display: 'flex', 
+          flexDirection: 'row', 
+          alignItems: 'center', 
+          justifyContent: 'space-between',
+          border: '1px solid rgba(255, 255, 255, 0.05)',
+          boxShadow: '0 10px 40px rgba(0, 0, 0, 0.2)',
+          gap: '2rem'
+        }}>
+          
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem', flex: 1, minWidth: 0 }}>
+            <h1 style={{ margin: 0, fontSize: '1.4rem', fontWeight: 600, lineHeight: 1.3, textShadow: '0 2px 10px rgba(0,0,0,0.5)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+              {item.title}
+            </h1>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', color: 'rgba(255,255,255,0.5)', fontSize: '0.85rem', fontWeight: 500 }}>
+              <span style={{ display: 'flex', alignItems: 'center', gap: '0.3rem' }}><ShieldCheck size={14} color="#10b981" /> Securely Shared</span>
+              <span>•</span>
+              <span style={{ textTransform: 'uppercase', letterSpacing: '0.05em', color: 'rgba(255,255,255,0.7)' }}>{ext.split('.').pop()} FILE</span>
+            </div>
           </div>
           
-          {/* Media Info Side Panel */}
-          <div style={{ flex: '1 1 300px', padding: '3rem 2.5rem', display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'flex-start', borderLeft: '1px solid var(--border, rgba(0, 0, 0, 0.1))' }}>
-            <h1 style={{ margin: '0 0 1.5rem 0', fontSize: '1.75rem', fontWeight: 600, lineHeight: 1.3 }}>{item.title}</h1>
-            <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '1rem', color: 'var(--text-muted, #64748b)', fontSize: '0.9rem', fontWeight: 500 }}>
-              <span style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', background: 'var(--hover, rgba(0, 0, 0, 0.05))', padding: '0.5rem 1rem', borderRadius: '8px' }}><ShieldCheck size={16} /> Securely Shared</span>
-              <span style={{ background: 'var(--hover, rgba(0, 0, 0, 0.05))', padding: '0.5rem 1rem', borderRadius: '8px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>{ext.split('.').pop()} FILE</span>
-            </div>
-            <div style={{ marginTop: 'auto', paddingTop: '3rem', width: '100%' }}>
-              <a 
-                href={`/api/media/${item.id}?download=true`} 
-                download 
-                style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem', width: '100%', background: 'var(--primary, #4f46e5)', color: 'white', padding: '1rem', borderRadius: '12px', textDecoration: 'none', fontWeight: 600, fontSize: '1.05rem', transition: 'background 0.2s', boxShadow: '0 4px 12px -2px rgba(79, 70, 229, 0.3)' }}
-              >
-                <Download size={20} />
-                Download File
-              </a>
-            </div>
-          </div>
+          <a 
+            href={`/api/media/${item.id}?download=true`} 
+            download 
+            style={{ 
+              display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem', 
+              background: 'linear-gradient(135deg, #4f46e5 0%, #db2777 100%)', 
+              color: 'white', padding: '1rem 2rem', borderRadius: '9999px', 
+              textDecoration: 'none', fontWeight: 600, fontSize: '1rem', 
+              boxShadow: '0 10px 20px -5px rgba(219, 39, 119, 0.4)',
+              flexShrink: 0
+            }}
+          >
+            <Download size={18} />
+            Download
+          </a>
         </div>
+        
       </main>
+      
+      <style dangerouslySetInnerHTML={{__html: `
+        @keyframes spin { 100% { transform: rotate(360deg); } }
+      `}} />
     </div>
   );
 }
