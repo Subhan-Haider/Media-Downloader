@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import type { MediaItem } from '@/lib/db';
-import { Play, Download, Trash2, X, ArrowUpRight, Wand2, Music } from 'lucide-react';
+import { Play, Download, Trash2, X, ArrowUpRight, Wand2, Music, Volume2 } from 'lucide-react';
 
 export default function LibraryPage() {
   const [library, setLibrary] = useState<MediaItem[]>([]);
@@ -265,7 +265,7 @@ export default function LibraryPage() {
                       <>
                         <video src={`/api/media/${item.id}#t=0.1`} preload="metadata" style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', objectFit: 'cover' }} muted playsInline />
                         <div style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(0,0,0,0.2)' }}>
-                          <Play size={40} color="white" opacity={0.9} />
+                          {isPlaying ? <Volume2 size={40} color="var(--primary)" opacity={0.9} /> : <Play size={40} color="white" opacity={0.9} />}
                         </div>
                       </>
                     );
@@ -282,7 +282,7 @@ export default function LibraryPage() {
                         </div>
                       )}
                       <div style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(0,0,0,0.4)' }}>
-                        <Play size={40} color="white" opacity={0.9} />
+                        {isPlaying ? <Volume2 size={40} color="var(--primary)" opacity={0.9} /> : <Play size={40} color="white" opacity={0.9} />}
                       </div>
                     </>
                   );
