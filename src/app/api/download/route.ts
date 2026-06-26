@@ -61,6 +61,26 @@ export async function GET(request: Request) {
       throw new Error('Failed to fetch Reddit image');
     }
 
+    if (itag === 'facebook_image' && url.includes('facebook.com')) {
+      const res = await fetch(url, { headers: { 'User-Agent': 'Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)' } });
+      if (res.ok) {
+        const html = await res.text();
+        const match = html.match(/<meta\s+property="og:image"\s+content="([^"]+)"/i);
+        if (match) {
+          const imageUrl = match[1].replace(/&amp;/g, '&');
+          // Fetch the final image using Discordbot
+          const imageRes = await fetch(imageUrl, { headers: { 'User-Agent': 'Mozilla/5.0 (compatible; Discordbot/2.0; +https://discordapp.com)' } });
+          if (imageRes.ok && imageRes.body) {
+            const ext = imageUrl.match(/\.png/i) ? 'png' : 'jpg';
+            const headers = new Headers(imageRes.headers);
+            headers.set('Content-Disposition', `attachment; filename="${safeTitle}.${ext}"`);
+            return new NextResponse(imageRes.body as any, { headers });
+          }
+        }
+      }
+      throw new Error('Failed to fetch Facebook image');
+    }
+
     if (itag === 'image' && (url.includes('twitter.com') || url.includes('x.com'))) {
       const urlObj = new URL(url);
       const pathParts = urlObj.pathname.split('/');

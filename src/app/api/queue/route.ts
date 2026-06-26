@@ -59,14 +59,14 @@ export async function POST(request: Request) {
 }
 
 // Helper: download a direct image URL to the library folder and move to library
-async function downloadImageUrl(id: string, imageUrl: string) {
+async function downloadImageUrl(id: string, imageUrl: string, userAgent: string = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36') {
   const { updateQueueItem, moveToLibrary } = require('@/lib/db');
   const fs = require('fs');
   const { join } = require('path');
 
-  const ext = /\.(jpg|jpeg)/i.test(imageUrl) ? 'jpg'
-            : /\.png/i.test(imageUrl) ? 'png'
-            : /\.webp/i.test(imageUrl) ? 'webp' : 'jpg';
+  const urlObj = new URL(imageUrl);
+  const extMatch = urlObj.pathname.match(/\.([^.]+)$/);
+  const ext = extMatch ? extMatch[1] : 'jpg'; // fallback to jpg
   const finalPath = join(process.cwd(), 'data', 'library', `${id}.${ext}`);
 
   updateQueueItem(id, { progress: 'Downloading image...' });
@@ -76,7 +76,7 @@ async function downloadImageUrl(id: string, imageUrl: string) {
     const timeout = setTimeout(() => controller.abort(), 30000); // 30 seconds timeout
     
     const response = await fetch(imageUrl, {
-      headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36' },
+      headers: { 'User-Agent': userAgent },
       signal: controller.signal
     });
     
@@ -300,6 +300,31 @@ async function startDownload(id: string, url: string, type: string, quality: str
         updateQueueItem(id, { status: 'error', error: 'Could not fetch image from this Reddit post.' });
         return;
       }
+
+      if (url.includes('facebook.com') && (errMsg.toLowerCase().includes('cannot parse data') || type === 'image')) {
+        updateQueueItem(id, { progress: 'Fetching Facebook image...' });
+        try {
+          const res = await fetch(url, { headers: { 'User-Agent': 'Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)' } });
+          if (res.ok) {
+            const html = await res.text();
+            const match = html.match(/<meta\s+property="og:image"\s+content="([^"]+)"/i);
+            if (match) {
+              const imageUrl = match[1].replace(/&amp;/g, '&');
+              // Use Discordbot User-Agent because Facebook only returns raw images for social media crawlers
+              await downloadImageUrl(id, imageUrl, 'Mozilla/5.0 (compatible; Discordbot/2.0; +https://discordapp.com)');
+              updateQueueItem(id, {
+                title: 'Facebook Image',
+                thumbnail: imageUrl
+              });
+              return;
+            }
+          }
+        } catch (err) {
+          console.error("Facebook image fallback failed:", err);
+        }
+        updateQueueItem(id, { status: 'error', error: 'Could not fetch image from this Facebook post.' });
+        return;
+      }
       
       console.warn(`Failed to fetch metadata for ${id}, continuing anyway...`);
     }
@@ -346,13 +371,16 @@ async function startDownload(id: string, url: string, type: string, quality: str
   const args = [
     url,
     '-o', outputPath,
-    '--ffmpeg-location', ffmpegPath,
     '--no-warnings',
     '--no-call-home',
     '--no-check-certificates',
     '--rm-cache-dir',
     '--write-info-json'
   ];
+
+  if (fs.existsSync(ffmpegPath)) {
+    args.push('--ffmpeg-location', ffmpegPath);
+  };
 
   // Only pass format selector for video/audio — not for image posts
   if (formatString) {

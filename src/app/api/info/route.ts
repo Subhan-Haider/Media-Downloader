@@ -129,6 +129,32 @@ export async function GET(request: Request) {
       } catch (e) {}
     }
 
+    if (url.includes('facebook.com') && errMsg.toLowerCase().includes('cannot parse data')) {
+      try {
+        const res = await fetch(url, { headers: { 'User-Agent': 'Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)' } });
+        if (res.ok) {
+          const html = await res.text();
+          const match = html.match(/<meta\s+property="og:image"\s+content="([^"]+)"/i);
+          if (match) {
+            const imageUrl = match[1].replace(/&amp;/g, '&');
+            return NextResponse.json({
+              title: 'Facebook Image',
+              thumbnail: imageUrl,
+              duration: null,
+              formats: [{
+                itag: 'facebook_image', // Custom itag
+                qualityLabel: 'High-Res Facebook Image',
+                hasVideo: false,
+                hasAudio: false,
+                container: imageUrl.match(/\.png/i) ? 'png' : 'jpg',
+                contentLength: 0
+              }],
+            });
+          }
+        }
+      } catch (e) {}
+    }
+
     console.error('Error fetching video info:', error.stderr || error);
     return NextResponse.json({ error: error.stderr || error.message || String(error) }, { status: 500 });
   }
