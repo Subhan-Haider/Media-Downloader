@@ -83,6 +83,31 @@ After deleting it, restart your Next.js dev server, and the warning should be go
 
 If you want to run this application permanently on a Linux server (like an Ubuntu VPS) or run it on a different port, follow these steps:
 
+### Full Server Installation Script (Copy & Paste)
+Run this entire block in your server's terminal from inside the `Media-Downloader` directory to install dependencies, build the app, and start it in the background:
+
+```bash
+# 1. Install Node.js dependencies
+npm install
+
+# 2. Set up the Python virtual environment and install instaloader
+python3 -m venv venv
+source venv/bin/activate
+pip install instaloader
+
+# 3. Install PM2 globally (if you haven't already)
+sudo npm install -g pm2
+
+# 4. Build the Next.js production app
+npm run build
+
+# 5. Start the app in the background using PM2
+pm2 start npm --name "media-downloader" -- run start
+
+# 6. Save the PM2 process so it restarts if the server reboots
+pm2 save
+```
+
 ### Running Continuously with PM2
 To keep the app running in the background even after you close your SSH terminal, use `pm2`.
 
