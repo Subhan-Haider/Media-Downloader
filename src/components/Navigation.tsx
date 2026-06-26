@@ -17,13 +17,29 @@ export default function Navigation() {
   return (
     <>
       <style>{`
+        .nav-wrapper {
+          position: fixed;
+          top: 0;
+          left: 0;
+          right: 0;
+          display: flex;
+          justify-content: center;
+          padding: 1rem 1rem;
+          z-index: 100;
+          pointer-events: none;
+          box-sizing: border-box;
+          max-width: 100vw;
+          overflow: hidden;
+        }
         .nav-pill {
           display: flex;
-          gap: 0.5rem;
-          padding: 0.6rem 1rem;
+          gap: 0.25rem;
+          padding: 0.5rem 0.75rem;
           border-radius: 100px;
           pointer-events: auto;
           flex-wrap: nowrap;
+          max-width: calc(100vw - 2rem);
+          overflow: hidden;
         }
         .nav-item {
           display: flex;
@@ -38,6 +54,7 @@ export default function Navigation() {
           background: transparent;
           white-space: nowrap;
           font-size: 0.95rem;
+          flex-shrink: 0;
         }
         .nav-item:hover {
           background: var(--hover);
@@ -50,30 +67,34 @@ export default function Navigation() {
         .nav-label {
           display: inline;
         }
-        @media (max-width: 500px) {
+
+        /* Tablet — slightly smaller text */
+        @media (max-width: 640px) {
+          .nav-item {
+            padding: 0.5rem 0.85rem;
+            font-size: 0.85rem;
+            gap: 0.35rem;
+          }
+          .nav-pill {
+            padding: 0.4rem 0.6rem;
+          }
+        }
+
+        /* Mobile — icons only, no labels */
+        @media (max-width: 430px) {
           .nav-label {
             display: none;
           }
           .nav-item {
-            padding: 0.6rem 0.8rem;
+            padding: 0.6rem 0.75rem;
           }
           .nav-pill {
-            gap: 0.25rem;
-            padding: 0.5rem 0.75rem;
+            gap: 0.1rem;
+            padding: 0.4rem 0.5rem;
           }
         }
       `}</style>
-      <nav style={{
-        position: 'fixed',
-        top: 0,
-        left: 0,
-        right: 0,
-        display: 'flex',
-        justifyContent: 'center',
-        padding: '1.25rem 1rem',
-        zIndex: 100,
-        pointerEvents: 'none'
-      }}>
+      <nav className="nav-wrapper">
         <div className="glass-panel nav-pill">
           <Link href="/" className={`nav-item${isActive('/') ? ' active' : ''}`}>
             <Download size={20} />
