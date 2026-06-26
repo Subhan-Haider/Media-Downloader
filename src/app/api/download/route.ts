@@ -43,7 +43,7 @@ export async function GET(request: Request) {
           ? 'bestvideo[height<=1080][ext=mp4]+bestaudio[ext=m4a]/best[height<=1080][ext=mp4]/best'
           : `${itag}+bestaudio[ext=m4a]/${itag}`;
 
-      const ffmpegPath = join(process.cwd(), 'node_modules', 'ffmpeg-static', 'ffmpeg.exe');
+      const ffmpegPath = join(process.cwd(), 'node_modules', 'ffmpeg-static', process.platform === 'win32' ? 'ffmpeg.exe' : 'ffmpeg');
 
       const options: any = {
         f: formatString,

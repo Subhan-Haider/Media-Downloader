@@ -102,7 +102,7 @@ async function startDownload(id: string, url: string, type: string, quality: str
   let isImage = type === 'image';
   const containerExt = isAudio ? 'mp3' : isImage ? 'jpg' : 'mp4';
   const outputPath = join(process.cwd(), 'data', 'library', `${id}.%(ext)s`);
-  const ffmpegPath = join(process.cwd(), 'node_modules', 'ffmpeg-static', 'ffmpeg.exe');
+  const ffmpegPath = join(process.cwd(), 'node_modules', 'ffmpeg-static', process.platform === 'win32' ? 'ffmpeg.exe' : 'ffmpeg');
 
   updateQueueItem(id, { status: 'downloading', progress: 'Fetching metadata...' });
 
@@ -263,7 +263,7 @@ async function startDownload(id: string, url: string, type: string, quality: str
   updateQueueItem(id, { progress: 'Starting download...' });
 
   const { spawn } = require('child_process');
-  const ytDlpPath = join(process.cwd(), 'node_modules', 'youtube-dl-exec', 'bin', 'yt-dlp.exe');
+  const ytDlpPath = join(process.cwd(), 'node_modules', 'youtube-dl-exec', 'bin', process.platform === 'win32' ? 'yt-dlp.exe' : 'yt-dlp');
   
   const args = [
     url,
