@@ -37,33 +37,41 @@ export default async function SharedMediaPage({ params }: { params: Promise<{ id
   const isVideoFile = ['.mp4', '.webm', '.mkv', '.mov'].some(e => ext.endsWith(e));
 
   return (
-    <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', background: '#f8f9fa', color: '#1f2937', fontFamily: 'system-ui, sans-serif' }}>
+    <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', background: '#f9fafb', color: '#111827', fontFamily: 'system-ui, sans-serif' }}>
       
       {/* Simple Header */}
-      <header style={{ padding: '1rem 2rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: 'white', borderBottom: '1px solid #e5e7eb', position: 'sticky', top: 0, zIndex: 50 }}>
+      <header style={{ padding: '1rem 2rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: 'white', borderBottom: '1px solid #e5e7eb', position: 'sticky', top: 0, zIndex: 50, boxShadow: '0 1px 2px 0 rgba(0, 0, 0, 0.05)' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-          <img src="/watermark.png" alt="Logo" style={{ width: '32px', height: 'auto' }} />
-          <span style={{ fontWeight: 700, fontSize: '1.25rem', letterSpacing: '-0.02em', color: '#111827' }}>Media Downloader</span>
+          <img src="/watermark.png" alt="Logo" style={{ width: '28px', height: 'auto', opacity: 0.9 }} />
+          <span style={{ fontWeight: 700, fontSize: '1.2rem', letterSpacing: '-0.02em', color: '#111827' }}>Media Downloader</span>
         </div>
         <a 
           href={`/api/media/${item.id}?download=true`} 
           download 
-          style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', background: '#3b82f6', color: 'white', padding: '0.5rem 1.25rem', borderRadius: '9999px', textDecoration: 'none', fontWeight: 600, fontSize: '0.9rem', boxShadow: '0 4px 6px -1px rgba(59, 130, 246, 0.3)' }}
+          style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', background: '#111827', color: 'white', padding: '0.5rem 1.25rem', borderRadius: '8px', textDecoration: 'none', fontWeight: 600, fontSize: '0.9rem', transition: 'background 0.2s', boxShadow: '0 1px 3px rgba(0,0,0,0.1)' }}
         >
           <Download size={16} />
           Save File
         </a>
       </header>
 
-      {/* Main Content (Constrained Light Card) */}
-      <main style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '2rem 1rem' }}>
+      {/* Main Content (Hug Media Layout) */}
+      <main style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '3rem 1rem' }}>
         
-        <div style={{ width: '100%', maxWidth: '800px', background: 'white', borderRadius: '24px', overflow: 'hidden', border: '1px solid #e5e7eb', boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.05), 0 8px 10px -6px rgba(0, 0, 0, 0.01)' }}>
+        <div style={{ 
+          width: isAudioFile ? '450px' : 'fit-content', 
+          maxWidth: '100%', 
+          background: 'white', 
+          borderRadius: '16px', 
+          overflow: 'hidden', 
+          border: '1px solid #e5e7eb', 
+          boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)' 
+        }}>
           
           {/* Media Player Area */}
-          <div style={{ width: '100%', background: '#f3f4f6', display: 'flex', justifyContent: 'center', position: 'relative' }}>
+          <div style={{ width: '100%', background: '#000', display: 'flex', justifyContent: 'center', position: 'relative' }}>
             {isImageFile && (
-              <img src={`/api/media/${item.id}`} alt={item.title} style={{ width: '100%', maxHeight: '65vh', objectFit: 'contain' }} />
+              <img src={`/api/media/${item.id}`} alt={item.title} style={{ display: 'block', maxWidth: '100%', maxHeight: '70vh', objectFit: 'contain' }} />
             )}
             
             {isVideoFile && (
@@ -72,30 +80,30 @@ export default async function SharedMediaPage({ params }: { params: Promise<{ id
                 poster={item.thumbnail} 
                 controls 
                 autoPlay 
-                style={{ width: '100%', maxHeight: '65vh', objectFit: 'contain' }} 
+                style={{ display: 'block', maxWidth: '100%', maxHeight: '70vh' }} 
               />
             )}
             
             {isAudioFile && (
-              <div style={{ padding: '4rem 2rem', width: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '2rem' }}>
+              <div style={{ padding: '3rem 2rem', width: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '2rem', background: 'white' }}>
                 {item.thumbnail ? (
-                  <img src={item.thumbnail} alt="Cover" style={{ width: '250px', height: '250px', objectFit: 'cover', borderRadius: '16px', boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1)' }} />
+                  <img src={item.thumbnail} alt="Cover" style={{ width: '200px', height: '200px', objectFit: 'cover', borderRadius: '12px', boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)' }} />
                 ) : (
-                  <div style={{ width: '150px', height: '150px', background: '#e5e7eb', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                    <Music size={64} color="#9ca3af" />
+                  <div style={{ width: '120px', height: '120px', background: '#f3f4f6', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <Music size={48} color="#9ca3af" />
                   </div>
                 )}
-                <audio src={`/api/media/${item.id}`} controls autoPlay style={{ width: '100%', maxWidth: '500px', height: '54px' }} />
+                <audio src={`/api/media/${item.id}`} controls autoPlay style={{ width: '100%', height: '40px' }} />
               </div>
             )}
           </div>
           
           {/* Media Info Footer */}
-          <div style={{ padding: '2rem', display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center', background: 'white' }}>
-            <h1 style={{ margin: '0 0 1rem 0', fontSize: '1.5rem', fontWeight: 700, lineHeight: 1.3, color: '#111827' }}>{item.title}</h1>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '1.5rem', color: '#6b7280', fontSize: '0.95rem', fontWeight: 500 }}>
-              <span style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', background: '#f3f4f6', padding: '0.4rem 1rem', borderRadius: '9999px' }}><ShieldCheck size={16} /> Securely Shared</span>
-              <span style={{ background: '#f3f4f6', padding: '0.4rem 1rem', borderRadius: '9999px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>{ext.split('.').pop()} FILE</span>
+          <div style={{ padding: '1.5rem', display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center', background: 'white', borderTop: '1px solid #f3f4f6' }}>
+            <h1 style={{ margin: '0 0 1rem 0', fontSize: '1.25rem', fontWeight: 600, lineHeight: 1.4, color: '#111827', maxWidth: '600px' }}>{item.title}</h1>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', color: '#4b5563', fontSize: '0.85rem', fontWeight: 500 }}>
+              <span style={{ display: 'flex', alignItems: 'center', gap: '0.3rem', background: '#f3f4f6', padding: '0.3rem 0.8rem', borderRadius: '6px' }}><ShieldCheck size={14} /> Securely Shared</span>
+              <span style={{ background: '#f3f4f6', padding: '0.3rem 0.8rem', borderRadius: '6px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>{ext.split('.').pop()} FILE</span>
             </div>
           </div>
         </div>
