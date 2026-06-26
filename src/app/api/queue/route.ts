@@ -3,6 +3,7 @@ import { addToQueue, updateQueueItem, moveToLibrary, readDB, clearErrorsFromQueu
 import youtubedl from 'youtube-dl-exec';
 import { join } from 'path';
 import { randomBytes } from 'crypto';
+import fs from 'fs';
 
 export async function GET() {
   cleanupOldMedia(2); // Auto-delete files older than 2 days
