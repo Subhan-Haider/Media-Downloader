@@ -4,6 +4,8 @@ import { Download, Music, ShieldCheck } from 'lucide-react';
 import Link from 'next/link';
 import { Metadata } from 'next';
 
+export const dynamic = 'force-dynamic';
+
 export async function generateMetadata({ params }: { params: { id: string } }): Promise<Metadata> {
   const db = readDB();
   const item = db.library.find(i => i.id === params.id);
