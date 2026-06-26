@@ -10,9 +10,8 @@ export async function POST(request: Request) {
     }
 
     const options: any = {
-      dumpJson: true,
+      dumpSingleJson: true,
       noWarnings: true,
-      noCallHome: true,
       noCheckCertificates: true,
     };
 
