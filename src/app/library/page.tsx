@@ -143,7 +143,7 @@ export default function LibraryPage() {
                 <div style={{
                   position: 'absolute',
                   bottom: '55px',
-                  right: '25px',
+                  right: '20px',
                   pointerEvents: 'none',
                   userSelect: 'none',
                   opacity: 0.85,
