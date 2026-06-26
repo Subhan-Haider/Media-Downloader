@@ -81,13 +81,13 @@ export default function Home() {
   };
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: '80vh' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: '80vh', padding: '0 1rem' }}>
       <div style={{ position: 'absolute', top: '10%', left: '50%', transform: 'translateX(-50%)', width: '600px', height: '400px', background: 'radial-gradient(circle, rgba(139,92,246,0.1) 0%, rgba(236,72,153,0) 70%)', filter: 'blur(60px)', zIndex: -1, pointerEvents: 'none' }} />
       <div style={{ textAlign: 'center', marginBottom: '5rem', position: 'relative' }}>
         <div style={{ display: 'inline-block', padding: '0.4rem 1.2rem', background: 'rgba(0,0,0,0.03)', border: '1px solid rgba(0,0,0,0.05)', borderRadius: '100px', color: 'var(--text-muted)', fontSize: '0.9rem', fontWeight: 600, letterSpacing: '0.05em', marginBottom: '1.5rem', backdropFilter: 'blur(10px)' }}>
           MEDIA SERVER 2.0 IS LIVE
         </div>
-        <h1 style={{ fontSize: '5.5rem', fontWeight: 800, margin: 0, letterSpacing: '-0.04em', lineHeight: 1.1, textShadow: '0 10px 30px rgba(0,0,0,0.05)' }}>
+        <h1 className="hero-title" style={{ fontWeight: 800, margin: 0, letterSpacing: '-0.04em', lineHeight: 1.1, textShadow: '0 10px 30px rgba(0,0,0,0.05)' }}>
           Download <br />
           <span style={{ background: 'linear-gradient(135deg, var(--primary), var(--accent))', WebkitBackgroundClip: 'text', color: 'transparent', textShadow: '0 0 40px rgba(79, 70, 229, 0.2)' }}>Anything.</span>
         </h1>
@@ -186,7 +186,7 @@ export default function Home() {
         )}
 
 
-        <div style={{ display: 'flex', gap: '0.75rem', width: '100%', marginTop: '0.5rem', alignItems: 'stretch' }}>
+        <div className="download-buttons">
           {/* Quality selector */}
           <select 
             value={quality} 
