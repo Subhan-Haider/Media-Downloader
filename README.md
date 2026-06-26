@@ -56,6 +56,18 @@ python3 -m venv venv
 source venv/bin/activate
 pip install instaloader curl-cffi
 ```
+or
+
+```bash
+git pull
+rm -rf node_modules venv .next
+npm install
+npm run build
+python3 -m venv venv
+source venv/bin/activate
+pip install instaloader curl-cffi
+pm2 restart media-downloader
+```
 *(Note: You will need to run `source venv/bin/activate` every time you open a new terminal to work on this project before running your python scripts.)*
 
 **Option B: Use `pipx`**
