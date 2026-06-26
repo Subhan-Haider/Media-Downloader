@@ -47,9 +47,9 @@ export default async function SharedMediaPage({ params }: { params: Promise<{ id
         </div>
         <Link 
           href="/library" 
-          style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '0.5rem 1rem', background: 'var(--card-bg)', border: '1px solid var(--border)', borderRadius: '8px', color: 'var(--foreground)', textDecoration: 'none', fontWeight: 600, fontSize: '0.9rem', transition: 'all 0.2s', boxShadow: '0 2px 5px rgba(0,0,0,0.05)' }}
+          style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', padding: '0.75rem 1.5rem', background: 'var(--card-bg)', border: '1px solid var(--border)', borderRadius: '12px', color: 'var(--foreground)', textDecoration: 'none', fontWeight: 600, fontSize: '1.1rem', transition: 'all 0.2s', boxShadow: '0 4px 10px rgba(0,0,0,0.05)' }}
         >
-          <ArrowLeft size={16} />
+          <ArrowLeft size={20} />
           Back to Library
         </Link>
       </header>
