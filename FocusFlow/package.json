@@ -1,0 +1,34 @@
+{
+  "name": "focus-flow",
+  "version": "1.0.0",
+  "description": "A premium Pomodoro Timer application",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron .",
+    "build": "electron-builder build --win appx"
+  },
+  "keywords": [
+    "pomodoro",
+    "timer",
+    "productivity"
+  ],
+  "author": "",
+  "license": "ISC",
+  "build": {
+    "appId": "com.focusflow.app",
+    "productName": "FocusFlow",
+    "win": {
+      "target": "appx"
+    },
+    "appx": {
+      "identityName": "FocusFlow",
+      "publisher": "CN=YourPublisherName",
+      "publisherDisplayName": "Your Publisher Name",
+      "applicationId": "FocusFlow"
+    }
+  },
+  "devDependencies": {
+    "electron": "^31.7.7",
+    "electron-builder": "^24.13.3"
+  }
+}

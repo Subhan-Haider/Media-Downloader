@@ -58,3 +58,6 @@ next-env.d.ts
 test*.js
 test*.mkv
 *-player-script.js
+
+# Electron build output
+FocusFlow/dist/
