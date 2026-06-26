@@ -222,7 +222,10 @@ export default function LibraryPage() {
             <div 
               key={item.id} 
               style={{ background: 'var(--card-bg)', borderRadius: '12px', overflow: 'hidden', cursor: 'pointer', border: '1px solid var(--border)', transition: 'transform 0.2s' }}
-              onClick={() => setPlayingId(item.id)}
+              onClick={() => {
+                setPlayingId(item.id);
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+              }}
               onMouseEnter={(e) => e.currentTarget.style.transform = 'scale(1.02)'}
               onMouseLeave={(e) => e.currentTarget.style.transform = 'scale(1)'}
             >
