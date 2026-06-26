@@ -144,7 +144,11 @@ export default async function SharedMediaPage({ params }: { params: Promise<{ id
 
       {/* Minimal Footer for Public Share Page */}
       <footer style={{ padding: '2rem', textAlign: 'center', color: 'var(--text-muted)', fontSize: '0.85rem', fontWeight: 500 }}>
-        &copy; {new Date().getFullYear()} Media Downloader. All rights reserved.
+        <div>&copy; {new Date().getFullYear()} Media Downloader. All rights reserved.</div>
+        <div style={{ marginTop: '0.75rem', display: 'flex', justifyContent: 'center', gap: '1.5rem' }}>
+          <Link href="/privacy" style={{ color: 'var(--text-muted)', textDecoration: 'none', transition: 'color 0.2s' }}>Privacy Policy</Link>
+          <Link href="/terms" style={{ color: 'var(--text-muted)', textDecoration: 'none', transition: 'color 0.2s' }}>Terms of Service</Link>
+        </div>
       </footer>
     </div>
   );
