@@ -14,7 +14,7 @@ jobs:
       with:
         host: ${{ secrets.HOST }}
         username: ${{ secrets.USERNAME }}
-        key: ${{ secrets.SSH_KEY }}
+        password: ${{ secrets.PASSWORD }}
         script: |
           # TODO: Change this to the actual path of your project on your server
           cd /path/to/your/project/folder
