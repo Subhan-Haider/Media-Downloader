@@ -1,6 +1,6 @@
 import { readDB } from '@/lib/db';
 import { notFound } from 'next/navigation';
-import { Download, Music, ShieldCheck, ArrowLeft } from 'lucide-react';
+import { Download, Music, ShieldCheck, ArrowLeft, AlertTriangle } from 'lucide-react';
 import Link from 'next/link';
 import { Metadata } from 'next';
 
@@ -131,6 +131,14 @@ export default async function SharedMediaPage({ params }: { params: Promise<{ id
             </a>
             
           </div>
+        </div>
+
+        {/* Warning Box */}
+        <div style={{ marginTop: '2rem', maxWidth: '800px', padding: '1rem 1.5rem', background: 'rgba(239, 68, 68, 0.05)', border: '1px solid rgba(239, 68, 68, 0.2)', borderRadius: '12px', display: 'flex', alignItems: 'center', gap: '1rem', color: 'var(--text-muted)' }}>
+          <AlertTriangle size={24} color="#ef4444" style={{ flexShrink: 0 }} />
+          <p style={{ margin: 0, fontSize: '0.85rem', lineHeight: 1.5 }}>
+            <strong style={{ color: 'var(--foreground)' }}>Warning:</strong> Please ensure you trust the sender before downloading any files. Media Downloader does not scan files for malware and is not responsible for the contents of user-shared files.
+          </p>
         </div>
       </main>
 
