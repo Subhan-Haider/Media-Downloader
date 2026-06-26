@@ -33,9 +33,24 @@ function applyWatermarkPromise(filePath: string, id: string): Promise<void> {
     ];
 
     const wmProcess = spawn(ffmpegPathGlobal, watermarkArgs, { detached: true, stdio: 'ignore' });
+    
+    wmProcess.on('error', (err) => {
+      console.error('FFmpeg Spawn Error:', err);
+      updateQueueItem(id, { progress: `Watermark Failed: ${err.message}` });
+    });
+
     wmProcess.on('close', (wmCode: number) => {
+      console.log('FFmpeg closed with code:', wmCode);
       if (wmCode === 0 && fs.existsSync(watermarkTemp)) {
-        try { fs.unlinkSync(filePath); fs.renameSync(watermarkTemp, filePath); } catch(e) {}
+        try { 
+          fs.unlinkSync(filePath); 
+          fs.renameSync(watermarkTemp, filePath); 
+          console.log('Watermark applied successfully.');
+        } catch(e) {
+          console.error('File rename error after watermark:', e);
+        }
+      } else {
+        console.error('Watermark process failed or temp file missing. Code:', wmCode);
       }
       resolve();
     });
