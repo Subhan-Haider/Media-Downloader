@@ -44,6 +44,41 @@ Open [http://localhost:3000](http://localhost:3000) in your browser to start dow
 
 ---
 
+## 🛠 Troubleshooting
+
+### Python `pip install` Error (`externally-managed-environment`)
+Modern Linux distributions block system-wide `pip install` commands by default. You have a few options to fix this:
+
+**Option A: Use a Virtual Environment (Recommended)**
+This keeps your Python dependencies isolated for this specific project.
+```bash
+python3 -m venv venv
+source venv/bin/activate
+pip install instaloader
+```
+*(Note: You will need to run `source venv/bin/activate` every time you open a new terminal to work on this project before running your python scripts.)*
+
+**Option B: Use `pipx`**
+If `instaloader` is meant to be used as a standalone command-line tool, `pipx` is a great way to install it system-wide without breaking the environment.
+```bash
+sudo apt install pipx
+pipx install instaloader
+```
+
+### Next.js Warning (`multiple lockfiles`)
+You might see a Turbopack warning: `Next.js inferred your workspace root, but it may not be correct.` 
+
+This happens if Next.js finds a stray `package-lock.json` file in your home directory (e.g., `~/package-lock.json`), in addition to the one inside your project.
+
+**How to fix it:**
+If you didn't intentionally set up a Node project in your root home directory, you can simply delete the stray lockfile:
+```bash
+rm ~/package-lock.json
+```
+After deleting it, restart your Next.js dev server, and the warning should be gone!
+
+---
+
 ## 🌍 Deployment & Advanced Server Usage
 
 If you want to run this application permanently on a Linux server (like an Ubuntu VPS) or run it on a different port, follow these steps:
