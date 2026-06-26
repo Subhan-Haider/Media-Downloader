@@ -30,7 +30,6 @@ export async function GET(request: Request) {
     const info = await youtubedl(url, {
       dumpSingleJson: true,
       noWarnings: true,
-      noCallHome: true,
       noCheckCertificates: true,
       youtubeSkipDashManifest: true,
       flatPlaylist: true,

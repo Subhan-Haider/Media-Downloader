@@ -136,7 +136,7 @@ async function startDownload(id: string, url: string, type: string, quality: str
     let fallbackToImageScraper = false;
 
     try {
-      const metaOptions: any = { dumpJson: true, noWarnings: true, noCallHome: true, noCheckCertificates: true };
+      const metaOptions: any = { dumpJson: true, noWarnings: true, noCheckCertificates: true };
       if (hasCookies) metaOptions.cookies = cookiesPath;
       else if (browserAuth && browserAuth !== 'none') metaOptions.cookiesFromBrowser = browserAuth;
 
@@ -223,7 +223,6 @@ async function startDownload(id: string, url: string, type: string, quality: str
       const metaOptions: any = {
         dumpJson: true,
         noWarnings: true,
-        noCallHome: true,
         noCheckCertificates: true
       };
       if (browserAuth && browserAuth !== 'none') {
@@ -343,7 +342,6 @@ async function startDownload(id: string, url: string, type: string, quality: str
     o: outputPath,
     ffmpegLocation: ffmpegPath,
     noWarnings: true,
-    noCallHome: true,
     noCheckCertificates: true,
   };
 
@@ -373,7 +371,6 @@ async function startDownload(id: string, url: string, type: string, quality: str
     url,
     '-o', outputPath,
     '--no-warnings',
-    '--no-call-home',
     '--no-check-certificates',
     '--rm-cache-dir',
     '--write-info-json'
