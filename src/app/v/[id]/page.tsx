@@ -42,7 +42,7 @@ export default async function SharedMediaPage({ params }: { params: Promise<{ id
       {/* Clean Transparent Header */}
       <header style={{ padding: '1.5rem 2rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '1rem', zIndex: 50 }}>
         <Link href="/" style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', textDecoration: 'none', cursor: 'pointer' }}>
-          <img src="/logo.png" alt="Logo" style={{ width: '80px', height: 'auto', dropShadow: '0 4px 6px rgba(0,0,0,0.1)' }} />
+          <img src="/logo.png" alt="Logo" style={{ width: '80px', height: 'auto', filter: 'drop-shadow(0 4px 6px rgba(0,0,0,0.1))' }} />
           <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
             <div style={{ fontWeight: 900, fontSize: '1.75rem', letterSpacing: '0.02em', lineHeight: 1, textTransform: 'uppercase' }}>
               <span style={{ color: 'var(--foreground)' }}>MEDIA</span>
