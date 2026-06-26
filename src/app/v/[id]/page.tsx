@@ -42,8 +42,18 @@ export default async function SharedMediaPage({ params }: { params: Promise<{ id
       {/* Clean Transparent Header */}
       <header style={{ padding: '1.5rem 2rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between', zIndex: 50 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-          <img src="/watermark.png" alt="Logo" style={{ width: '32px', height: 'auto', opacity: 0.9 }} />
-          <span style={{ fontWeight: 700, fontSize: '1.25rem', letterSpacing: '-0.02em', color: 'var(--foreground)' }}>Media Downloader</span>
+          <img src="/logo.png" alt="Logo" style={{ width: '40px', height: 'auto', dropShadow: '0 4px 6px rgba(0,0,0,0.1)' }} />
+          <span style={{ 
+            fontWeight: 800, 
+            fontSize: '1.4rem', 
+            letterSpacing: '-0.03em', 
+            background: 'linear-gradient(135deg, #3b82f6 0%, #a855f7 50%, #ec4899 100%)',
+            WebkitBackgroundClip: 'text',
+            WebkitTextFillColor: 'transparent',
+            display: 'inline-block'
+          }}>
+            Media Downloader
+          </span>
         </div>
         <Link 
           href="/library" 
