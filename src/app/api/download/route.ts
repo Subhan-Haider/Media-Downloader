@@ -119,16 +119,19 @@ export async function GET(request: Request) {
           ? 'bestvideo[height<=1080][ext=mp4]+bestaudio[ext=m4a]/best[height<=1080][ext=mp4]/best'
           : `${itag}+bestaudio[ext=m4a]/${itag}`;
 
+      const fs = require('fs');
       const ffmpegPath = require('ffmpeg-static');
 
       const options: any = {
         f: formatString,
         o: tempPath.replace(`.${containerExt}`, '.%(ext)s'),
-        ffmpegLocation: ffmpegPath,
         noWarnings: true,
-        noCallHome: true,
         noCheckCertificates: true,
       };
+
+      if (fs.existsSync(ffmpegPath)) {
+        options.ffmpegLocation = ffmpegPath;
+      }
 
       if (extractAudio) {
         options.extractAudio = true;
