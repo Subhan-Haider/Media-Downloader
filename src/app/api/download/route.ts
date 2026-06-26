@@ -39,6 +39,28 @@ export async function GET(request: Request) {
       throw new Error('Failed to download direct image');
     }
 
+    if (itag === 'reddit_image' && url.includes('reddit.com')) {
+      const redirectRes = await fetch(url, { method: 'HEAD' });
+      const finalUrlObj = new URL(redirectRes.url);
+      const embedUrl = 'https://embed.reddit.com' + finalUrlObj.pathname;
+      const res = await fetch(embedUrl);
+      if (res.ok) {
+        const html = await res.text();
+        const match = html.match(/https:\/\/(preview|i)\.redd\.it\/[a-zA-Z0-9_-]+\.(?:jpg|png|webp|gif)/);
+        if (match) {
+          const imageUrl = match[0].replace(/&amp;/g, '&');
+          const imageRes = await fetch(imageUrl);
+          if (imageRes.ok && imageRes.body) {
+            const ext = imageUrl.match(/\.png/i) ? 'png' : 'jpg';
+            const headers = new Headers(imageRes.headers);
+            headers.set('Content-Disposition', `attachment; filename="${safeTitle}.${ext}"`);
+            return new NextResponse(imageRes.body as any, { headers });
+          }
+        }
+      }
+      throw new Error('Failed to fetch Reddit image');
+    }
+
     if (itag === 'image' && (url.includes('twitter.com') || url.includes('x.com'))) {
       const urlObj = new URL(url);
       const pathParts = urlObj.pathname.split('/');

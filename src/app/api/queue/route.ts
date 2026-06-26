@@ -273,6 +273,33 @@ async function startDownload(id: string, url: string, type: string, quality: str
         updateQueueItem(id, { status: 'error', error: 'Could not fetch image from this Tweet.' });
         return;
       }
+
+      if (url.includes('reddit.com') && (errMsg.toLowerCase().includes('no video') || type === 'image')) {
+        updateQueueItem(id, { progress: 'Fetching Reddit image...' });
+        try {
+          const redirectRes = await fetch(url, { method: 'HEAD' });
+          const finalUrlObj = new URL(redirectRes.url);
+          const embedUrl = 'https://embed.reddit.com' + finalUrlObj.pathname;
+          const res = await fetch(embedUrl);
+          if (res.ok) {
+            const html = await res.text();
+            const match = html.match(/https:\/\/(preview|i)\.redd\.it\/[a-zA-Z0-9_-]+\.(?:jpg|png|webp|gif)/);
+            if (match) {
+              const imageUrl = match[0].replace(/&amp;/g, '&');
+              await downloadImageUrl(id, imageUrl);
+              updateQueueItem(id, {
+                title: 'Reddit Image',
+                thumbnail: imageUrl
+              });
+              return;
+            }
+          }
+        } catch (err) {
+          console.error("Reddit image fallback failed:", err);
+        }
+        updateQueueItem(id, { status: 'error', error: 'Could not fetch image from this Reddit post.' });
+        return;
+      }
       
       console.warn(`Failed to fetch metadata for ${id}, continuing anyway...`);
     }

@@ -99,6 +99,36 @@ export async function GET(request: Request) {
       } catch (e) {}
     }
 
+    if (url.includes('reddit.com') && errMsg.toLowerCase().includes('no video')) {
+      try {
+        const redirectRes = await fetch(url, { method: 'HEAD' });
+        const finalUrlObj = new URL(redirectRes.url);
+        const embedUrl = 'https://embed.reddit.com' + finalUrlObj.pathname;
+        const res = await fetch(embedUrl);
+        if (res.ok) {
+          const html = await res.text();
+          const match = html.match(/https:\/\/(preview|i)\.redd\.it\/[a-zA-Z0-9_-]+\.(?:jpg|png|webp|gif)/);
+          
+          if (match) {
+            const imageUrl = match[0].replace(/&amp;/g, '&');
+            return NextResponse.json({
+              title: 'Reddit Image',
+              thumbnail: imageUrl,
+              duration: null,
+              formats: [{
+                itag: 'reddit_image', // Custom itag
+                qualityLabel: 'High-Res Reddit Image',
+                hasVideo: false,
+                hasAudio: false,
+                container: imageUrl.match(/\.png/i) ? 'png' : 'jpg',
+                contentLength: 0
+              }],
+            });
+          }
+        }
+      } catch (e) {}
+    }
+
     console.error('Error fetching video info:', error.stderr || error);
     return NextResponse.json({ error: error.stderr || error.message || String(error) }, { status: 500 });
   }
