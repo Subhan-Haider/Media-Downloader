@@ -1,6 +1,6 @@
 import { readDB } from '@/lib/db';
 import { notFound } from 'next/navigation';
-import { Download, Music, ShieldCheck } from 'lucide-react';
+import { Download, Music, ShieldCheck, ArrowLeft } from 'lucide-react';
 import Link from 'next/link';
 import { Metadata } from 'next';
 
@@ -45,6 +45,13 @@ export default async function SharedMediaPage({ params }: { params: Promise<{ id
           <img src="/watermark.png" alt="Logo" style={{ width: '32px', height: 'auto', opacity: 0.9 }} />
           <span style={{ fontWeight: 700, fontSize: '1.25rem', letterSpacing: '-0.02em', color: 'var(--foreground)' }}>Media Downloader</span>
         </div>
+        <Link 
+          href="/library" 
+          style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '0.5rem 1rem', background: 'var(--card-bg)', border: '1px solid var(--border)', borderRadius: '8px', color: 'var(--foreground)', textDecoration: 'none', fontWeight: 600, fontSize: '0.9rem', transition: 'all 0.2s', boxShadow: '0 2px 5px rgba(0,0,0,0.05)' }}
+        >
+          <ArrowLeft size={16} />
+          Back to Library
+        </Link>
       </header>
 
       {/* Main Content (Clean Theme-Matched Layout) */}
