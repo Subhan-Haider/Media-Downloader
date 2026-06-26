@@ -134,9 +134,9 @@ export default async function SharedMediaPage({ params }: { params: Promise<{ id
         </div>
 
         {/* Disclaimer Box */}
-        <div style={{ marginTop: '2rem', maxWidth: '800px', padding: '1rem 1.5rem', background: 'rgba(239, 68, 68, 0.05)', border: '1px solid rgba(239, 68, 68, 0.2)', borderRadius: '12px', display: 'flex', alignItems: 'center', gap: '1rem', color: 'var(--text-muted)' }}>
-          <Info size={24} color="#ef4444" style={{ flexShrink: 0 }} />
-          <p style={{ margin: 0, fontSize: '0.85rem', lineHeight: 1.5 }}>
+        <div style={{ marginTop: '2.5rem', maxWidth: '850px', padding: '1.25rem 2rem', background: 'rgba(239, 68, 68, 0.05)', border: '1px solid rgba(239, 68, 68, 0.2)', borderRadius: '12px', display: 'flex', alignItems: 'center', gap: '1.25rem', color: 'var(--text-muted)' }}>
+          <Info size={28} color="#ef4444" style={{ flexShrink: 0 }} />
+          <p style={{ margin: 0, fontSize: '0.95rem', lineHeight: 1.6 }}>
             <strong style={{ color: '#ef4444' }}>Disclaimer:</strong> This application is created strictly for educational purposes only. The developers do not endorse, encourage, or support the downloading of copyrighted material. You are solely responsible for ensuring you have the legal right or permission to download and store any media using this tool.
           </p>
         </div>
