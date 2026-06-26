@@ -10,6 +10,23 @@ export async function GET(request: Request) {
   }
 
   try {
+    // Check for direct image URLs (Reddit, Imgur, or direct extensions)
+    if (url.match(/\.(jpg|jpeg|png|webp|gif|avif)(\?.*)?$/i) || url.includes('preview.redd.it') || url.includes('i.redd.it')) {
+      return NextResponse.json({
+        title: 'Image File',
+        thumbnail: url,
+        duration: null,
+        formats: [{
+          itag: 'direct_image',
+          qualityLabel: 'Original Image',
+          hasVideo: false,
+          hasAudio: false,
+          container: url.match(/\.png/i) ? 'png' : url.match(/\.webp/i) ? 'webp' : 'jpg',
+          contentLength: 0
+        }],
+      });
+    }
+
     const info = await youtubedl(url, {
       dumpSingleJson: true,
       noWarnings: true,

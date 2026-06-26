@@ -28,6 +28,17 @@ export async function GET(request: Request) {
   const safeTitle = encodeURIComponent(title.replace(/[/\\?%*:|"<>]/g, '-'));
 
   try {
+    if (itag === 'direct_image' || url.match(/\.(jpg|jpeg|png|webp|gif|avif)(\?.*)?$/i) || url.includes('preview.redd.it') || url.includes('i.redd.it')) {
+      const imageRes = await fetch(url);
+      if (imageRes.ok && imageRes.body) {
+        const ext = url.match(/\.png/i) ? 'png' : url.match(/\.webp/i) ? 'webp' : 'jpg';
+        const headers = new Headers(imageRes.headers);
+        headers.set('Content-Disposition', `attachment; filename="${safeTitle}.${ext}"`);
+        return new NextResponse(imageRes.body as any, { headers });
+      }
+      throw new Error('Failed to download direct image');
+    }
+
     if (itag === 'image' && (url.includes('twitter.com') || url.includes('x.com'))) {
       const urlObj = new URL(url);
       const pathParts = urlObj.pathname.split('/');

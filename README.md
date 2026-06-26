@@ -91,24 +91,24 @@ Run this entire block in your server's terminal from inside the `Media-Downloade
 git pull
 npm install
 
-# 2. Delete any existing Python venv & Next.js cache to prevent Turbopack crash
-rm -rf venv .next
+rm -rf node_modules venv .next
+npm install
 
-# 3. Build the Next.js production app safely
+# 2. Build the Next.js production app safely
 npm run build
 
-# 4. Recreate the Python virtual environment and install python dependencies
+# 3. Recreate the Python virtual environment and install python dependencies
 python3 -m venv venv
 source venv/bin/activate
 pip install instaloader curl-cffi
 
-# 5. Install PM2 globally (if you haven't already)
+# 4. Install PM2 globally (if you haven't already)
 sudo npm install -g pm2
 
-# 6. Start the app in the background using PM2
+# 5. Start the app in the background using PM2
 pm2 restart media-downloader || pm2 start npm --name "media-downloader" -- run start
 
-# 7. Save the PM2 process so it restarts if the server reboots
+# 6. Save the PM2 process so it restarts if the server reboots
 pm2 save
 ```
 

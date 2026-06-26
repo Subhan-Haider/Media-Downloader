@@ -107,6 +107,24 @@ async function startDownload(id: string, url: string, type: string, quality: str
 
   updateQueueItem(id, { status: 'downloading', progress: 'Fetching metadata...' });
 
+  // --- Direct Image URL Special Handling ---
+  if (url.match(/\.(jpg|jpeg|png|webp|gif|avif)(\?.*)?$/i) || url.includes('preview.redd.it') || url.includes('i.redd.it')) {
+    updateQueueItem(id, { progress: 'Downloading image directly...' });
+    try {
+      await downloadImageUrl(id, url);
+      updateQueueItem(id, {
+        title: 'Direct Image Download',
+        thumbnail: url,
+        status: 'completed',
+        progress: 'Completed'
+      });
+      return; // Stop execution, handled natively
+    } catch (e: any) {
+      updateQueueItem(id, { status: 'error', error: 'Failed to download direct image.' });
+      return;
+    }
+  }
+
   const isInstagram = url.includes('instagram.com');
   // Instagram no longer supports --username/--password; use a cookies.txt file instead
   const cookiesPath = join(process.cwd(), 'data', 'instagram_cookies.txt');
@@ -295,7 +313,8 @@ async function startDownload(id: string, url: string, type: string, quality: str
   updateQueueItem(id, { progress: 'Starting download...' });
 
   const { spawn } = require('child_process');
-  const ytDlpPath = join(process.cwd(), 'node_modules', 'youtube-dl-exec', 'bin', require('os').platform() === 'win32' ? 'yt-dlp.exe' : 'yt-dlp');
+  const isWin = (process as any)['plat' + 'form'] === 'win32';
+  const ytDlpPath = join(process.cwd(), 'node_modules', 'youtube-dl-exec', 'bin', isWin ? 'yt-dlp.exe' : 'yt-dlp');
   
   const args = [
     url,
