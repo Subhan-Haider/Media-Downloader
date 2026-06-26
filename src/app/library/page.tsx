@@ -14,7 +14,7 @@ export default function LibraryPage() {
         const res = await fetch('/api/library');
         const data = await res.json();
         setLibrary(data.library || []);
-      } catch (e) {}
+      } catch (e) { }
     };
     fetchLibrary();
   }, []);
@@ -24,7 +24,7 @@ export default function LibraryPage() {
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '2rem' }}>
         <h1 style={{ fontSize: '2rem', margin: 0 }}>Media Library</h1>
         {library.length > 0 && (
-          <button 
+          <button
             onClick={async () => {
               if (confirm('Are you sure you want to permanently delete ALL videos from your library? This cannot be undone.')) {
                 await fetch('/api/library', { method: 'DELETE' });
@@ -91,10 +91,10 @@ export default function LibraryPage() {
       </a>
 
       {playingId && (
-        <div style={{ 
-          marginBottom: '2.5rem', 
-          background: 'var(--card-bg)', 
-          borderRadius: '16px', 
+        <div style={{
+          marginBottom: '2.5rem',
+          background: 'var(--card-bg)',
+          borderRadius: '16px',
           overflow: 'hidden',
           border: '1px solid var(--border)',
           boxShadow: '0 20px 40px -10px rgba(0,0,0,0.3)'
@@ -102,10 +102,10 @@ export default function LibraryPage() {
           {(() => {
             const file = library.find(i => i.id === playingId)?.filename?.toLowerCase();
             if (!file) return null;
-            
+
             const isAudio = file.endsWith('.mp3') || file.endsWith('.m4a');
             const isImage = ['.jpg', '.jpeg', '.png', '.webp', '.avif', '.gif'].some(ext => file.endsWith(ext));
-            
+
             if (isAudio) {
               return (
                 <div style={{ padding: '3rem 2rem', background: 'linear-gradient(145deg, var(--hover) 0%, var(--card-bg) 100%)', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '1.5rem' }}>
@@ -117,7 +117,7 @@ export default function LibraryPage() {
                 </div>
               );
             }
-            
+
             if (isImage) {
               return (
                 <div style={{ width: '100%', background: '#050505', display: 'flex', justifyContent: 'center', position: 'relative' }}>
@@ -136,13 +136,13 @@ export default function LibraryPage() {
                 </div>
               );
             }
-            
+
             return (
               <div style={{ width: '100%', background: '#050505', display: 'flex', justifyContent: 'center', position: 'relative' }}>
                 <video src={`/api/media/${playingId}`} controls autoPlay style={{ width: '100%', maxHeight: '70vh' }} />
                 <div style={{
                   position: 'absolute',
-                  bottom: '65px',
+                  bottom: '55px',
                   right: '25px',
                   pointerEvents: 'none',
                   userSelect: 'none',
@@ -154,18 +154,18 @@ export default function LibraryPage() {
               </div>
             );
           })()}
-          
-          <div style={{ 
-            display: 'flex', gap: '0.75rem', padding: '1.25rem', 
+
+          <div style={{
+            display: 'flex', gap: '0.75rem', padding: '1.25rem',
             background: 'var(--card-bg)', borderTop: '1px solid var(--border)',
             justifyContent: 'flex-end', flexWrap: 'wrap'
           }}>
-            <a 
-              href={`/api/media/${playingId}?download=true`} 
-              download 
-              style={{ 
+            <a
+              href={`/api/media/${playingId}?download=true`}
+              download
+              style={{
                 display: 'flex', alignItems: 'center', gap: '0.5rem',
-                padding: '0.7rem 1.25rem', background: 'var(--primary)', color: 'white', textDecoration: 'none', 
+                padding: '0.7rem 1.25rem', background: 'var(--primary)', color: 'white', textDecoration: 'none',
                 fontWeight: 500, borderRadius: '9999px', fontSize: '0.9rem', transition: 'all 0.2s'
               }}
               onMouseEnter={e => { e.currentTarget.style.filter = 'brightness(1.1)'; e.currentTarget.style.transform = 'translateY(-1px)'; }}
@@ -174,8 +174,8 @@ export default function LibraryPage() {
               <Download size={18} />
               Save to Device
             </a>
-            
-            <button 
+
+            <button
               onClick={async () => {
                 if (confirm('Are you sure you want to permanently delete this file?')) {
                   await fetch(`/api/media/${playingId}`, { method: 'DELETE' });
@@ -183,7 +183,7 @@ export default function LibraryPage() {
                   setPlayingId(null);
                 }
               }}
-              style={{ 
+              style={{
                 display: 'flex', alignItems: 'center', gap: '0.5rem',
                 padding: '0.7rem 1.25rem', background: 'transparent', color: '#ef4444', border: '1px solid rgba(239, 68, 68, 0.3)',
                 cursor: 'pointer', fontWeight: 500, borderRadius: '9999px', fontSize: '0.9rem', transition: 'all 0.2s'
@@ -194,10 +194,10 @@ export default function LibraryPage() {
               <Trash2 size={18} />
               Delete
             </button>
-            
-            <button 
+
+            <button
               onClick={() => setPlayingId(null)}
-              style={{ 
+              style={{
                 display: 'flex', alignItems: 'center', gap: '0.5rem',
                 padding: '0.7rem 1.25rem', background: 'var(--hover)', color: 'var(--foreground)', border: 'none',
                 cursor: 'pointer', fontWeight: 500, borderRadius: '9999px', fontSize: '0.9rem', transition: 'all 0.2s'
@@ -219,8 +219,8 @@ export default function LibraryPage() {
       ) : (
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(250px, 1fr))', gap: '1.5rem' }}>
           {library.map(item => (
-            <div 
-              key={item.id} 
+            <div
+              key={item.id}
               style={{ background: 'var(--card-bg)', borderRadius: '12px', overflow: 'hidden', cursor: 'pointer', border: '1px solid var(--border)', transition: 'transform 0.2s' }}
               onClick={() => {
                 setPlayingId(item.id);
@@ -233,7 +233,7 @@ export default function LibraryPage() {
                 {(() => {
                   const isImageFile = item.filename && ['.jpg', '.jpeg', '.png', '.webp', '.avif', '.gif'].some(ext => item.filename.toLowerCase().endsWith(ext));
                   const isVideoFile = item.filename && ['.mp4', '.webm', '.mkv', '.mov'].some(ext => item.filename.toLowerCase().endsWith(ext));
-                  
+
                   if (isImageFile) {
                     return <img src={`/api/media/${item.id}`} alt={item.title} style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', objectFit: 'cover' }} />;
                   }
@@ -248,7 +248,7 @@ export default function LibraryPage() {
                       </>
                     );
                   }
-                  
+
                   // Fallback for audio or unknown
                   return (
                     <>
