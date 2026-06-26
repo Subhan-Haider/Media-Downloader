@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import type { MediaItem } from '@/lib/db';
-import { Play, Download, Trash2, X, ArrowUpRight, Wand2, Music, Volume2, Share2, Settings } from 'lucide-react';
+import { Play, Download, Trash2, X, ArrowUpRight, Wand2, Music, Volume2, Share2, Settings, Repeat, Repeat1 } from 'lucide-react';
 
 export default function LibraryPage() {
   const [library, setLibrary] = useState<MediaItem[]>([]);
@@ -10,6 +10,11 @@ export default function LibraryPage() {
   const [filter, setFilter] = useState<'All' | 'Video' | 'Audio' | 'Image'>('All');
   const [showSettings, setShowSettings] = useState(false);
   const [autoDeleteDays, setAutoDeleteDays] = useState<number>(2);
+  const [repeatMode, setRepeatMode] = useState<'off' | 'one' | 'loop'>('off');
+
+  const cycleRepeat = () => {
+    setRepeatMode(prev => prev === 'off' ? 'loop' : prev === 'loop' ? 'one' : 'off');
+  };
 
   useEffect(() => {
     const fetchLibrary = async () => {
@@ -220,7 +225,34 @@ export default function LibraryPage() {
                     </div>
                   )}
                   <h3 style={{ margin: 0, fontSize: '1.25rem', textAlign: 'center', color: 'var(--foreground)' }}>{item?.title}</h3>
-                  <audio src={`/api/media/${playingId}`} controls autoPlay style={{ width: '100%', maxWidth: '600px', height: '54px', borderRadius: '8px' }} />
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', width: '100%', maxWidth: '600px' }}>
+                    <audio
+                      key={`${playingId}-${repeatMode}`}
+                      src={`/api/media/${playingId}`}
+                      controls
+                      autoPlay
+                      loop={repeatMode === 'one' || repeatMode === 'loop'}
+                      style={{ flex: 1, height: '54px', borderRadius: '8px' }}
+                    />
+                    <button
+                      onClick={cycleRepeat}
+                      title={repeatMode === 'off' ? 'Repeat off' : repeatMode === 'loop' ? 'Repeat all' : 'Repeat once'}
+                      style={{
+                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        width: '44px', height: '44px', borderRadius: '50%', border: 'none', cursor: 'pointer', flexShrink: 0,
+                        background: repeatMode !== 'off' ? 'var(--primary)' : 'var(--hover)',
+                        color: repeatMode !== 'off' ? 'white' : 'var(--text-muted)',
+                        transition: 'all 0.2s', boxShadow: repeatMode !== 'off' ? '0 4px 12px rgba(79,70,229,0.3)' : 'none'
+                      }}
+                    >
+                      {repeatMode === 'one' ? <Repeat1 size={20} /> : <Repeat size={20} />}
+                    </button>
+                  </div>
+                  {repeatMode !== 'off' && (
+                    <div style={{ fontSize: '0.8rem', color: 'var(--primary)', fontWeight: 600, letterSpacing: '0.05em' }}>
+                      {repeatMode === 'loop' ? '🔁 Repeat On' : '🔂 Repeat Once'}
+                    </div>
+                  )}
                 </div>
               );
             }
