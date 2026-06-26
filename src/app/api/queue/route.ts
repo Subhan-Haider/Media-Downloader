@@ -60,8 +60,6 @@ export async function POST(request: Request) {
 // Helper: download a direct image URL to the library folder and move to library
 async function downloadImageUrl(id: string, imageUrl: string) {
   const { updateQueueItem, moveToLibrary } = require('@/lib/db');
-  const https = require('https');
-  const http = require('http');
   const fs = require('fs');
   const { join } = require('path');
 
@@ -72,25 +70,31 @@ async function downloadImageUrl(id: string, imageUrl: string) {
 
   updateQueueItem(id, { progress: 'Downloading image...' });
 
-  await new Promise<void>((resolve, reject) => {
-    const doGet = (targetUrl: string) => {
-      const protocol = targetUrl.startsWith('https') ? https : http;
-      protocol.get(targetUrl, { headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36' } }, (response: any) => {
-        if (response.statusCode === 301 || response.statusCode === 302) {
-          doGet(response.headers.location);
-        } else {
-          const file = fs.createWriteStream(finalPath);
-          response.pipe(file);
-          file.on('finish', () => { file.close(); resolve(); });
-          file.on('error', reject);
-        }
-      }).on('error', reject);
-    };
-    doGet(imageUrl);
-  });
-
-  updateQueueItem(id, { filename: `${id}.${ext}` });
-  moveToLibrary(id);
+  try {
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 30000); // 30 seconds timeout
+    
+    const response = await fetch(imageUrl, {
+      headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36' },
+      signal: controller.signal
+    });
+    
+    clearTimeout(timeout);
+    
+    if (!response.ok) {
+      throw new Error(`Failed to fetch image: ${response.status} ${response.statusText}`);
+    }
+    
+    const arrayBuffer = await response.arrayBuffer();
+    const buffer = Buffer.from(arrayBuffer);
+    fs.writeFileSync(finalPath, buffer);
+    
+    updateQueueItem(id, { filename: `${id}.${ext}` });
+    moveToLibrary(id);
+  } catch (err: any) {
+    console.error(`Failed to download image ${imageUrl}:`, err);
+    updateQueueItem(id, { status: 'error', error: `Failed to download image: ${err.message}` });
+  }
 }
 
 async function startDownload(id: string, url: string, type: string, quality: string, embedSubs: boolean, browserAuth?: string) {
