@@ -204,7 +204,10 @@ export default function LibraryPage() {
           borderRadius: '16px',
           overflow: 'hidden',
           border: '1px solid var(--border)',
-          boxShadow: '0 20px 40px -10px rgba(0,0,0,0.3)'
+          boxShadow: '0 20px 40px -10px rgba(0,0,0,0.3)',
+          width: '100%',
+          maxWidth: '100%',
+          boxSizing: 'border-box'
         }}>
           {(() => {
             const file = library.find(i => i.id === playingId)?.filename?.toLowerCase();
@@ -216,9 +219,9 @@ export default function LibraryPage() {
             if (isAudio) {
               const item = library.find(i => i.id === playingId);
               return (
-                <div style={{ padding: '3rem 2rem', background: 'linear-gradient(145deg, var(--hover) 0%, var(--card-bg) 100%)', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '1.5rem' }}>
+                <div style={{ padding: '2rem 1.25rem', background: 'linear-gradient(145deg, var(--hover) 0%, var(--card-bg) 100%)', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '1.25rem' }}>
                   {item?.thumbnail ? (
-                    <img src={item.thumbnail} alt="Cover" style={{ width: '220px', height: '220px', objectFit: 'cover', borderRadius: '16px', boxShadow: '0 10px 40px rgba(0,0,0,0.4)' }} />
+                    <img src={item.thumbnail} alt="Cover" style={{ width: 'min(180px, 60vw)', height: 'min(180px, 60vw)', objectFit: 'cover', borderRadius: '16px', boxShadow: '0 10px 40px rgba(0,0,0,0.4)' }} />
                   ) : (
                     <div style={{ width: '120px', height: '120px', background: 'var(--primary)', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 10px 30px rgba(0,0,0,0.2)' }}>
                       <Music size={50} color="white" />
@@ -295,9 +298,12 @@ export default function LibraryPage() {
           })()}
 
           <div style={{
-            display: 'flex', gap: '0.75rem', padding: '1.25rem',
-            background: 'var(--card-bg)', borderTop: '1px solid var(--border)',
-            justifyContent: 'flex-end', flexWrap: 'wrap'
+            display: 'grid',
+            gridTemplateColumns: '1fr 1fr',
+            gap: '0.6rem',
+            padding: '1rem',
+            background: 'var(--card-bg)',
+            borderTop: '1px solid var(--border)',
           }}>
             <button
               onClick={() => {
@@ -306,14 +312,14 @@ export default function LibraryPage() {
                 alert('Share link copied to clipboard!');
               }}
               style={{
-                display: 'flex', alignItems: 'center', gap: '0.5rem',
-                padding: '0.7rem 1.25rem', background: 'transparent', color: 'var(--primary)', border: '1px solid var(--primary)',
-                cursor: 'pointer', fontWeight: 500, borderRadius: '9999px', fontSize: '0.9rem', transition: 'all 0.2s'
+                display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem',
+                padding: '0.7rem 0.5rem', background: 'transparent', color: 'var(--primary)', border: '1px solid var(--primary)',
+                cursor: 'pointer', fontWeight: 500, borderRadius: '12px', fontSize: '0.875rem', transition: 'all 0.2s', width: '100%'
               }}
               onMouseEnter={e => { e.currentTarget.style.background = 'rgba(var(--primary-rgb, 0, 112, 243), 0.1)' }}
               onMouseLeave={e => { e.currentTarget.style.background = 'transparent' }}
             >
-              <Share2 size={18} />
+              <Share2 size={16} />
               Share Link
             </button>
 
@@ -321,14 +327,14 @@ export default function LibraryPage() {
               href={`/api/media/${playingId}?download=true`}
               download
               style={{
-                display: 'flex', alignItems: 'center', gap: '0.5rem',
-                padding: '0.7rem 1.25rem', background: 'var(--primary)', color: 'white', textDecoration: 'none',
-                fontWeight: 500, borderRadius: '9999px', fontSize: '0.9rem', transition: 'all 0.2s'
+                display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem',
+                padding: '0.7rem 0.5rem', background: 'var(--primary)', color: 'white', textDecoration: 'none',
+                fontWeight: 500, borderRadius: '12px', fontSize: '0.875rem', transition: 'all 0.2s'
               }}
-              onMouseEnter={e => { e.currentTarget.style.filter = 'brightness(1.1)'; e.currentTarget.style.transform = 'translateY(-1px)'; }}
-              onMouseLeave={e => { e.currentTarget.style.filter = 'none'; e.currentTarget.style.transform = 'none'; }}
+              onMouseEnter={e => { e.currentTarget.style.filter = 'brightness(1.1)'; }}
+              onMouseLeave={e => { e.currentTarget.style.filter = 'none'; }}
             >
-              <Download size={18} />
+              <Download size={16} />
               Save to Device
             </a>
 
@@ -341,28 +347,28 @@ export default function LibraryPage() {
                 }
               }}
               style={{
-                display: 'flex', alignItems: 'center', gap: '0.5rem',
-                padding: '0.7rem 1.25rem', background: 'transparent', color: '#ef4444', border: '1px solid rgba(239, 68, 68, 0.3)',
-                cursor: 'pointer', fontWeight: 500, borderRadius: '9999px', fontSize: '0.9rem', transition: 'all 0.2s'
+                display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem',
+                padding: '0.7rem 0.5rem', background: 'transparent', color: '#ef4444', border: '1px solid rgba(239, 68, 68, 0.3)',
+                cursor: 'pointer', fontWeight: 500, borderRadius: '12px', fontSize: '0.875rem', transition: 'all 0.2s', width: '100%'
               }}
               onMouseEnter={e => { e.currentTarget.style.background = 'rgba(239, 68, 68, 0.1)' }}
               onMouseLeave={e => { e.currentTarget.style.background = 'transparent' }}
             >
-              <Trash2 size={18} />
+              <Trash2 size={16} />
               Delete
             </button>
 
             <button
               onClick={() => setPlayingId(null)}
               style={{
-                display: 'flex', alignItems: 'center', gap: '0.5rem',
-                padding: '0.7rem 1.25rem', background: 'var(--hover)', color: 'var(--foreground)', border: 'none',
-                cursor: 'pointer', fontWeight: 500, borderRadius: '9999px', fontSize: '0.9rem', transition: 'all 0.2s'
+                display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem',
+                padding: '0.7rem 0.5rem', background: 'var(--hover)', color: 'var(--foreground)', border: 'none',
+                cursor: 'pointer', fontWeight: 500, borderRadius: '12px', fontSize: '0.875rem', transition: 'all 0.2s', width: '100%'
               }}
               onMouseEnter={e => { e.currentTarget.style.background = 'var(--border)' }}
               onMouseLeave={e => { e.currentTarget.style.background = 'var(--hover)' }}
             >
-              <X size={18} />
+              <X size={16} />
               Close
             </button>
           </div>
