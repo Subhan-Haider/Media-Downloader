@@ -9,6 +9,9 @@ const inter = Inter({ subsets: ["latin"] });
 export const metadata: Metadata = {
   title: "Media Server",
   description: "Universal Media Downloader and Server",
+  icons: {
+    icon: "/logo.png",
+  },
 };
 
 export default function RootLayout({
