@@ -32,7 +32,7 @@ cd Media-Downloader
 Then, install the required Node and Python dependencies:
 ```bash
 npm install
-pip install instaloader
+pip install instaloader curl-cffi
 ```
 
 ### 3. Running the App
@@ -54,7 +54,7 @@ This keeps your Python dependencies isolated for this specific project.
 ```bash
 python3 -m venv venv
 source venv/bin/activate
-pip install instaloader
+pip install instaloader curl-cffi
 ```
 *(Note: You will need to run `source venv/bin/activate` every time you open a new terminal to work on this project before running your python scripts.)*
 
@@ -97,10 +97,10 @@ rm -rf venv .next
 # 3. Build the Next.js production app safely
 npm run build
 
-# 4. Recreate the Python virtual environment and install instaloader
+# 4. Recreate the Python virtual environment and install python dependencies
 python3 -m venv venv
 source venv/bin/activate
-pip install instaloader
+pip install instaloader curl-cffi
 
 # 5. Install PM2 globally (if you haven't already)
 sudo npm install -g pm2
