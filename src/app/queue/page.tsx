@@ -122,6 +122,24 @@ export default function QueuePage() {
                   Save File
                 </a>
               )}
+              
+              {(item.status === 'downloading' || item.status === 'queued') && (
+                <button
+                  onClick={async () => {
+                    await fetch(`/api/queue?id=${item.id}`, { method: 'DELETE' });
+                    setQueue(prev => prev.map(i => i.id === item.id ? { ...i, status: 'error', error: 'Cancelled by user' } : i));
+                  }}
+                  style={{
+                    padding: '0.5rem 1rem', background: 'transparent', color: '#ef4444', 
+                    border: '1px solid #ef4444', borderRadius: '8px', cursor: 'pointer',
+                    fontSize: '0.9rem', fontWeight: 500, marginLeft: 'auto', transition: 'all 0.2s'
+                  }}
+                  onMouseEnter={e => { e.currentTarget.style.background = '#ef4444'; e.currentTarget.style.color = 'white'; }}
+                  onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = '#ef4444'; }}
+                >
+                  Cancel
+                </button>
+              )}
             </div>
           ))}
         </div>

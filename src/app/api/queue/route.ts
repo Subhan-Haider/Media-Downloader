@@ -9,7 +9,13 @@ export async function GET() {
   return NextResponse.json({ queue: db.queue });
 }
 
-export async function DELETE() {
+export async function DELETE(request: Request) {
+  const url = new URL(request.url);
+  const id = url.searchParams.get('id');
+  if (id) {
+    updateQueueItem(id, { status: 'error', error: 'Cancelled by user', progress: 'Cancelled' });
+    return NextResponse.json({ success: true });
+  }
   clearErrorsFromQueue();
   return NextResponse.json({ success: true });
 }
