@@ -46,7 +46,7 @@ export async function GET(request: Request) {
       const res = await fetch(embedUrl);
       if (res.ok) {
         const html = await res.text();
-        const match = html.match(/https:\/\/(preview|i)\.redd\.it\/[a-zA-Z0-9_-]+\.(?:jpg|png|webp|gif)/);
+        const match = html.match(/https:\/\/(preview|i)\.redd\.it\/[a-zA-Z0-9_-]+\.(?:jpg|png|webp|gif)(?:\?[^"'\s\\]+)?/);
         if (match) {
           const imageUrl = match[0].replace(/&amp;/g, '&');
           const imageRes = await fetch(imageUrl);

@@ -99,7 +99,7 @@ export async function GET(request: Request) {
       } catch (e) {}
     }
 
-    if (url.includes('reddit.com') && errMsg.toLowerCase().includes('no video')) {
+    if (url.includes('reddit.com') && (errMsg.toLowerCase().includes('no video') || errMsg.includes('429'))) {
       try {
         const redirectRes = await fetch(url, { method: 'HEAD' });
         const finalUrlObj = new URL(redirectRes.url);
@@ -107,7 +107,7 @@ export async function GET(request: Request) {
         const res = await fetch(embedUrl);
         if (res.ok) {
           const html = await res.text();
-          const match = html.match(/https:\/\/(preview|i)\.redd\.it\/[a-zA-Z0-9_-]+\.(?:jpg|png|webp|gif)/);
+          const match = html.match(/https:\/\/(preview|i)\.redd\.it\/[a-zA-Z0-9_-]+\.(?:jpg|png|webp|gif)(?:\?[^"'\s\\]+)?/);
           
           if (match) {
             const imageUrl = match[0].replace(/&amp;/g, '&');

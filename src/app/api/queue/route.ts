@@ -274,7 +274,7 @@ async function startDownload(id: string, url: string, type: string, quality: str
         return;
       }
 
-      if (url.includes('reddit.com') && (errMsg.toLowerCase().includes('no video') || type === 'image')) {
+      if (url.includes('reddit.com') && (errMsg.toLowerCase().includes('no video') || errMsg.includes('429') || type === 'image')) {
         updateQueueItem(id, { progress: 'Fetching Reddit image...' });
         try {
           const redirectRes = await fetch(url, { method: 'HEAD' });
@@ -283,7 +283,7 @@ async function startDownload(id: string, url: string, type: string, quality: str
           const res = await fetch(embedUrl);
           if (res.ok) {
             const html = await res.text();
-            const match = html.match(/https:\/\/(preview|i)\.redd\.it\/[a-zA-Z0-9_-]+\.(?:jpg|png|webp|gif)/);
+            const match = html.match(/https:\/\/(preview|i)\.redd\.it\/[a-zA-Z0-9_-]+\.(?:jpg|png|webp|gif)(?:\?[^"'\s\\]+)?/);
             if (match) {
               const imageUrl = match[0].replace(/&amp;/g, '&');
               await downloadImageUrl(id, imageUrl);
