@@ -44,13 +44,10 @@ export default async function SharedMediaPage({ params }: { params: Promise<{ id
         <div style={{ display: 'flex', alignItems: 'center', gap: '1.25rem' }}>
           <img src="/logo.png" alt="Logo" style={{ width: '100px', height: 'auto', dropShadow: '0 4px 6px rgba(0,0,0,0.1)' }} />
           <span style={{ 
-            fontWeight: 900, 
-            fontSize: '2.5rem', 
+            fontWeight: 800, 
+            fontSize: '2rem', 
             letterSpacing: '-0.03em', 
-            background: 'linear-gradient(135deg, #2563eb 0%, #9333ea 50%, #db2777 100%)',
-            WebkitBackgroundClip: 'text',
-            WebkitTextFillColor: 'transparent',
-            display: 'inline-block'
+            color: 'var(--foreground)'
           }}>
             Media Downloader
           </span>
