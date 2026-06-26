@@ -6,9 +6,12 @@ import { promisify } from 'util';
 
 const statAsync = promisify(stat);
 
-export async function GET(request: Request, context: any) {
-  const params = await context.params;
-  const id = params.id;
+export async function GET(
+  request: Request,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  const resolvedParams = await params;
+  const id = resolvedParams.id;
   
   const db = readDB();
   const item = db.library.find(i => i.id === id);
