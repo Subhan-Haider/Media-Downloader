@@ -22,11 +22,11 @@ jobs:
           # Pull the latest code from the main branch
           git pull origin main
           
-          # Install dependencies (uncomment if needed)
-          # npm install
+          # Install dependencies
+          npm install
           
-          # Build the Next.js project (uncomment if needed)
-          # npm run build
+          # Build the Next.js project
+          npm run build
           
-          # Restart the server using PM2 (uncomment and replace 'my-app' with your pm2 process name)
-          # pm2 restart my-app
+          # Restart the server using PM2
+          pm2 restart media-downloader
