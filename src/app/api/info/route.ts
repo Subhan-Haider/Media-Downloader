@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import youtubedl from 'youtube-dl-exec';
+import { notifyDiscord, getIp, getCountry, getUserAgent } from '@/lib/discord';
 
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
@@ -8,6 +9,17 @@ export async function GET(request: Request) {
   if (!url) {
     return NextResponse.json({ error: 'Invalid URL' }, { status: 400 });
   }
+
+  // 🔔 Discord: URL lookup notification
+  notifyDiscord({
+    event: 'url_lookup',
+    title: url.substring(0, 100),
+    url,
+    id: 'lookup',
+    visitorIp: getIp(request),
+    visitorCountry: getCountry(request),
+    visitorDevice: getUserAgent(request),
+  }).catch(() => {});
 
   try {
     // Check for direct image URLs (Reddit, Imgur, or direct extensions)

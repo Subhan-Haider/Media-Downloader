@@ -3,6 +3,8 @@ import { notFound } from 'next/navigation';
 import { Download, Music, ShieldCheck, ArrowLeft, Info } from 'lucide-react';
 import Link from 'next/link';
 import { Metadata } from 'next';
+import { notifyDiscord } from '@/lib/discord';
+import { headers } from 'next/headers';
 
 export const dynamic = 'force-dynamic';
 
@@ -30,6 +32,28 @@ export default async function SharedMediaPage({ params }: { params: Promise<{ id
   if (!item || !item.filename) {
     notFound();
   }
+
+  // 🔔 Discord: share page visit notification
+  try {
+    const hdrs = await headers();
+    const ip = hdrs.get('x-forwarded-for')?.split(',')[0]?.trim() || hdrs.get('x-real-ip') || 'Unknown';
+    const country = hdrs.get('cf-ipcountry') || hdrs.get('x-vercel-ip-country') || '🌍';
+    const ua = hdrs.get('user-agent') || '';
+    const device = ua.includes('iPhone') ? '📱 iPhone' : ua.includes('Android') ? '📱 Android' : ua.includes('iPad') ? '📱 iPad' : ua.includes('Windows') ? '💻 Windows' : ua.includes('Macintosh') ? '🍎 Mac' : '🖥️ Browser';
+    const referer = hdrs.get('referer') || undefined;
+    notifyDiscord({
+      event: 'share_visit',
+      title: item.title || 'Untitled',
+      url: `https://media.subhan.tech/v/${item.id}`,
+      id: item.id,
+      type: item.filename.endsWith('.mp3') ? 'audio' : item.filename.match(/\.(jpg|png|webp|jpeg|avif|gif)$/) ? 'image' : 'video',
+      thumbnail: item.thumbnail,
+      visitorIp: ip,
+      visitorCountry: country,
+      visitorDevice: device,
+      referer,
+    }).catch(() => {});
+  } catch (_) {}
   
   const ext = item.filename.toLowerCase();
   const isImageFile = ['.jpg', '.jpeg', '.png', '.webp', '.avif', '.gif'].some(e => ext.endsWith(e));

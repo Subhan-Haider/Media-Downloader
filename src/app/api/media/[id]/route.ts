@@ -3,6 +3,7 @@ import { join } from 'path';
 import { stat, createReadStream } from 'fs';
 import { readDB } from '@/lib/db';
 import { promisify } from 'util';
+import { notifyDiscord, getIp, getCountry, getUserAgent } from '@/lib/discord';
 
 const statAsync = promisify(stat);
 
@@ -42,6 +43,28 @@ export async function GET(
     
     const fileExtension = item.filename.split('.').pop()?.toLowerCase() || 'mp4';
     const ext = `.${fileExtension}`;
+
+    // 🔔 Discord: visitor notification
+    const visitorIp = getIp(request);
+    const visitorCountry = getCountry(request);
+    const visitorDevice = getUserAgent(request);
+    const referer = request.headers.get('referer') || undefined;
+    const mediaType = ext === '.mp3' ? 'audio' : ['.jpg','.jpeg','.png','.webp','.avif','.gif'].includes(ext) ? 'image' : 'video';
+
+    if (isDownload) {
+      notifyDiscord({
+        event: 'file_download',
+        title: item.title,
+        url: request.url,
+        id: item.id,
+        type: mediaType,
+        thumbnail: item.thumbnail,
+        visitorIp,
+        visitorCountry,
+        visitorDevice,
+        referer,
+      }).catch(() => {});
+    }
     
     let contentType = 'video/mp4';
     if (ext === '.mp3') contentType = 'audio/mpeg';
@@ -73,6 +96,16 @@ export async function DELETE(request: Request, context: any) {
 
   const item = db.library[index];
   const filePath = join(process.cwd(), 'data', 'library', item.filename);
+
+  // 🔔 Discord: file deleted notification
+  notifyDiscord({
+    event: 'file_deleted',
+    title: item.title,
+    url: '',
+    id: item.id,
+    type: item.filename.endsWith('.mp3') ? 'audio' : 'image'.match(/\.(jpg|png|webp)$/) ? 'image' : 'video',
+    thumbnail: item.thumbnail,
+  }).catch(() => {});
 
   // Remove from DB
   db.library.splice(index, 1);
