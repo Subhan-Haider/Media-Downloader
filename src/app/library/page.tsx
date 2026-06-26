@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import type { MediaItem } from '@/lib/db';
-import { Play, Download, Trash2, X, ArrowUpRight, Wand2, Music, Volume2 } from 'lucide-react';
+import { Play, Download, Trash2, X, ArrowUpRight, Wand2, Music, Volume2, Share2 } from 'lucide-react';
 
 export default function LibraryPage() {
   const [library, setLibrary] = useState<MediaItem[]>([]);
@@ -205,6 +205,24 @@ export default function LibraryPage() {
             background: 'var(--card-bg)', borderTop: '1px solid var(--border)',
             justifyContent: 'flex-end', flexWrap: 'wrap'
           }}>
+            <button
+              onClick={() => {
+                const url = `${window.location.origin}/v/${playingId}`;
+                navigator.clipboard.writeText(url);
+                alert('Share link copied to clipboard!');
+              }}
+              style={{
+                display: 'flex', alignItems: 'center', gap: '0.5rem',
+                padding: '0.7rem 1.25rem', background: 'transparent', color: 'var(--primary)', border: '1px solid var(--primary)',
+                cursor: 'pointer', fontWeight: 500, borderRadius: '9999px', fontSize: '0.9rem', transition: 'all 0.2s'
+              }}
+              onMouseEnter={e => { e.currentTarget.style.background = 'rgba(var(--primary-rgb, 0, 112, 243), 0.1)' }}
+              onMouseLeave={e => { e.currentTarget.style.background = 'transparent' }}
+            >
+              <Share2 size={18} />
+              Share Link
+            </button>
+
             <a
               href={`/api/media/${playingId}?download=true`}
               download
