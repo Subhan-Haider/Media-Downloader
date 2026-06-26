@@ -142,8 +142,8 @@ export default function LibraryPage() {
                 <video src={`/api/media/${playingId}`} controls autoPlay style={{ width: '100%', maxHeight: '70vh' }} />
                 <div style={{
                   position: 'absolute',
-                  bottom: '50px',
-                  right: '15px',
+                  bottom: '45px',
+                  right: '10px',
                   pointerEvents: 'none',
                   userSelect: 'none',
                   opacity: 0.85,
