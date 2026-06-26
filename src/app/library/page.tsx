@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import type { MediaItem } from '@/lib/db';
-import { Play, Download, Trash2, X, ArrowUpRight, Wand2 } from 'lucide-react';
+import { Play, Download, Trash2, X, ArrowUpRight, Wand2, Music } from 'lucide-react';
 
 export default function LibraryPage() {
   const [library, setLibrary] = useState<MediaItem[]>([]);
@@ -91,62 +91,122 @@ export default function LibraryPage() {
       </a>
 
       {playingId && (
-        <div style={{ marginBottom: '2rem', background: '#000', borderRadius: '12px', overflow: 'hidden' }}>
+        <div style={{ 
+          marginBottom: '2.5rem', 
+          background: 'var(--card-bg)', 
+          borderRadius: '16px', 
+          overflow: 'hidden',
+          border: '1px solid var(--border)',
+          boxShadow: '0 20px 40px -10px rgba(0,0,0,0.3)'
+        }}>
           {(() => {
             const file = library.find(i => i.id === playingId)?.filename?.toLowerCase();
             if (!file) return null;
-            if (file.endsWith('.mp3')) return <audio src={`/api/media/${playingId}`} controls autoPlay style={{ width: '100%' }} />;
-            if (['.jpg', '.jpeg', '.png', '.webp', '.avif', '.gif'].some(ext => file.endsWith(ext))) {
-              return <img src={`/api/media/${playingId}`} alt="Image" style={{ width: '100%', maxHeight: '600px', objectFit: 'contain' }} />;
+            
+            const isAudio = file.endsWith('.mp3') || file.endsWith('.m4a');
+            const isImage = ['.jpg', '.jpeg', '.png', '.webp', '.avif', '.gif'].some(ext => file.endsWith(ext));
+            
+            if (isAudio) {
+              return (
+                <div style={{ padding: '3rem 2rem', background: 'linear-gradient(145deg, var(--hover) 0%, var(--card-bg) 100%)', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '1.5rem' }}>
+                  <div style={{ width: '80px', height: '80px', borderRadius: '50%', background: 'var(--primary)', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 10px 20px rgba(var(--primary-rgb), 0.3)' }}>
+                    <Music size={40} color="white" />
+                  </div>
+                  <h3 style={{ margin: 0, fontSize: '1.25rem', textAlign: 'center', color: 'var(--foreground)' }}>{library.find(i => i.id === playingId)?.title}</h3>
+                  <audio src={`/api/media/${playingId}`} controls autoPlay style={{ width: '100%', maxWidth: '600px', height: '54px', borderRadius: '8px' }} />
+                </div>
+              );
             }
-            return <video src={`/api/media/${playingId}`} controls autoPlay style={{ width: '100%', maxHeight: '600px' }} />;
+            
+            if (isImage) {
+              return (
+                <div style={{ width: '100%', background: '#050505', display: 'flex', justifyContent: 'center', position: 'relative' }}>
+                  <img src={`/api/media/${playingId}`} alt="Image" style={{ width: '100%', maxHeight: '70vh', objectFit: 'contain' }} />
+                  <div style={{
+                    position: 'absolute',
+                    bottom: '25px', /* Since images don't have video controls, we can put it lower */
+                    right: '25px',
+                    pointerEvents: 'none',
+                    userSelect: 'none',
+                    opacity: 0.85,
+                    zIndex: 10
+                  }}>
+                    <img src="/icon.png" alt="" style={{ width: '80px', height: 'auto', filter: 'drop-shadow(0 4px 6px rgba(0,0,0,0.5))' }} />
+                  </div>
+                </div>
+              );
+            }
+            
+            return (
+              <div style={{ width: '100%', background: '#050505', display: 'flex', justifyContent: 'center', position: 'relative' }}>
+                <video src={`/api/media/${playingId}`} controls autoPlay style={{ width: '100%', maxHeight: '70vh' }} />
+                <div style={{
+                  position: 'absolute',
+                  bottom: '65px',
+                  right: '25px',
+                  pointerEvents: 'none',
+                  userSelect: 'none',
+                  opacity: 0.85,
+                  zIndex: 10
+                }}>
+                  <img src="/icon.png" alt="" style={{ width: '80px', height: 'auto', filter: 'drop-shadow(0 4px 6px rgba(0,0,0,0.5))' }} />
+                </div>
+              </div>
+            );
           })()}
-          <div style={{ display: 'flex', gap: '1rem', padding: '1rem' }}>
+          
+          <div style={{ 
+            display: 'flex', gap: '0.75rem', padding: '1.25rem', 
+            background: 'var(--card-bg)', borderTop: '1px solid var(--border)',
+            justifyContent: 'flex-end', flexWrap: 'wrap'
+          }}>
             <a 
               href={`/api/media/${playingId}?download=true`} 
               download 
               style={{ 
-                flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem',
-                padding: '0.8rem', background: 'var(--primary)', color: 'white', textDecoration: 'none', 
-                fontWeight: 600, borderRadius: '8px', transition: 'background 0.2s', boxShadow: '0 4px 12px rgba(0,0,0,0.1)'
+                display: 'flex', alignItems: 'center', gap: '0.5rem',
+                padding: '0.7rem 1.25rem', background: 'var(--primary)', color: 'white', textDecoration: 'none', 
+                fontWeight: 500, borderRadius: '9999px', fontSize: '0.9rem', transition: 'all 0.2s'
               }}
-              onMouseEnter={e => e.currentTarget.style.background = 'var(--primary-hover)'}
-              onMouseLeave={e => e.currentTarget.style.background = 'var(--primary)'}
+              onMouseEnter={e => { e.currentTarget.style.filter = 'brightness(1.1)'; e.currentTarget.style.transform = 'translateY(-1px)'; }}
+              onMouseLeave={e => { e.currentTarget.style.filter = 'none'; e.currentTarget.style.transform = 'none'; }}
             >
-              <Download size={20} />
+              <Download size={18} />
               Save to Device
             </a>
+            
             <button 
               onClick={async () => {
-                if (confirm('Are you sure you want to permanently delete this video?')) {
+                if (confirm('Are you sure you want to permanently delete this file?')) {
                   await fetch(`/api/media/${playingId}`, { method: 'DELETE' });
                   setLibrary(prev => prev.filter(i => i.id !== playingId));
                   setPlayingId(null);
                 }
               }}
               style={{ 
-                flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem',
-                padding: '0.8rem', background: 'rgba(239, 68, 68, 0.1)', color: '#ef4444', border: '1px solid rgba(239, 68, 68, 0.2)',
-                cursor: 'pointer', fontWeight: 600, borderRadius: '8px', transition: 'all 0.2s'
+                display: 'flex', alignItems: 'center', gap: '0.5rem',
+                padding: '0.7rem 1.25rem', background: 'transparent', color: '#ef4444', border: '1px solid rgba(239, 68, 68, 0.3)',
+                cursor: 'pointer', fontWeight: 500, borderRadius: '9999px', fontSize: '0.9rem', transition: 'all 0.2s'
               }}
-              onMouseEnter={e => { e.currentTarget.style.background = '#ef4444'; e.currentTarget.style.color = 'white'; }}
-              onMouseLeave={e => { e.currentTarget.style.background = 'rgba(239, 68, 68, 0.1)'; e.currentTarget.style.color = '#ef4444'; }}
+              onMouseEnter={e => { e.currentTarget.style.background = 'rgba(239, 68, 68, 0.1)'; e.currentTarget.style.borderColor = '#ef4444'; }}
+              onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.borderColor = 'rgba(239, 68, 68, 0.3)'; }}
             >
-              <Trash2 size={20} />
-              Delete Video
+              <Trash2 size={18} />
+              Delete
             </button>
+            
             <button 
               onClick={() => setPlayingId(null)}
               style={{ 
-                flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem',
-                padding: '0.8rem', background: 'var(--card-bg)', color: 'var(--foreground)', border: '1px solid var(--border)',
-                cursor: 'pointer', fontWeight: 600, borderRadius: '8px', transition: 'background 0.2s'
+                display: 'flex', alignItems: 'center', gap: '0.5rem',
+                padding: '0.7rem 1.25rem', background: 'var(--hover)', color: 'var(--foreground)', border: 'none',
+                cursor: 'pointer', fontWeight: 500, borderRadius: '9999px', fontSize: '0.9rem', transition: 'all 0.2s'
               }}
-              onMouseEnter={e => e.currentTarget.style.background = 'var(--hover)'}
-              onMouseLeave={e => e.currentTarget.style.background = 'var(--card-bg)'}
+              onMouseEnter={e => { e.currentTarget.style.background = 'var(--border)'; }}
+              onMouseLeave={e => { e.currentTarget.style.background = 'var(--hover)'; }}
             >
-              <X size={20} />
-              Close Player
+              <X size={18} />
+              Close
             </button>
           </div>
         </div>
@@ -188,9 +248,18 @@ export default function LibraryPage() {
                   
                   // Fallback for audio or unknown
                   return (
-                    <div style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                      <Play size={40} opacity={0.5} />
-                    </div>
+                    <>
+                      {item.thumbnail ? (
+                        <img src={item.thumbnail} alt={item.title} style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', objectFit: 'cover' }} />
+                      ) : (
+                        <div style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                          <Music size={40} opacity={0.5} />
+                        </div>
+                      )}
+                      <div style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(0,0,0,0.4)' }}>
+                        <Play size={40} color="white" opacity={0.9} />
+                      </div>
+                    </>
                   );
                 })()}
                 <div style={{ position: 'absolute', bottom: '0.5rem', right: '0.5rem', background: 'rgba(0,0,0,0.8)', color: 'white', padding: '0.2rem 0.5rem', borderRadius: '4px', fontSize: '0.75rem', fontWeight: 600, letterSpacing: '0.05em' }}>

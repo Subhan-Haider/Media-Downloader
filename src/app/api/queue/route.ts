@@ -4,6 +4,43 @@ import youtubedl from 'youtube-dl-exec';
 import { join } from 'path';
 import { randomBytes } from 'crypto';
 import fs from 'fs';
+import os from 'os';
+import { spawn } from 'child_process';
+
+const ffmpegPathGlobal = join(process.cwd(), 'node_modules', 'ffmpeg-static', 'ffmpeg' + (os.platform() === 'win32' ? '.exe' : ''));
+
+function applyWatermarkPromise(filePath: string, id: string): Promise<void> {
+  return new Promise((resolve) => {
+    const isVideo = filePath.endsWith('.mp4') || filePath.endsWith('.mkv') || filePath.endsWith('.webm');
+    const isImage = filePath.endsWith('.jpg') || filePath.endsWith('.jpeg') || filePath.endsWith('.png') || filePath.endsWith('.webp');
+    
+    if (!isVideo && !isImage) return resolve();
+
+    const logoPath = join(process.cwd(), 'src', 'app', 'icon.png');
+    if (!fs.existsSync(logoPath) || !fs.existsSync(ffmpegPathGlobal)) return resolve();
+
+    updateQueueItem(id, { progress: 'Applying Watermark (this takes time)...' });
+    const ext = filePath.split('.').pop();
+    const watermarkTemp = filePath.replace(`.${ext}`, `.watermark.${ext}`);
+
+    const watermarkArgs = [
+      '-i', filePath,
+      '-i', logoPath,
+      '-filter_complex', '[1:v]scale=120:-1[logo];[0:v][logo]overlay=W-w-20:H-h-20',
+      ...(isVideo ? ['-c:a', 'copy', '-c:v', 'libx264', '-preset', 'fast'] : ['-frames:v', '1', '-update', '1']),
+      '-y',
+      watermarkTemp
+    ];
+
+    const wmProcess = spawn(ffmpegPathGlobal, watermarkArgs, { detached: true, stdio: 'ignore' });
+    wmProcess.on('close', (wmCode: number) => {
+      if (wmCode === 0 && fs.existsSync(watermarkTemp)) {
+        try { fs.unlinkSync(filePath); fs.renameSync(watermarkTemp, filePath); } catch(e) {}
+      }
+      resolve();
+    });
+  });
+}
 
 export async function GET() {
   cleanupOldMedia(2); // Auto-delete files older than 2 days
@@ -91,6 +128,8 @@ async function downloadImageUrl(id: string, imageUrl: string, userAgent: string 
     const buffer = Buffer.from(arrayBuffer);
     fs.writeFileSync(finalPath, buffer);
     
+    await applyWatermarkPromise(finalPath, id);
+    
     updateQueueItem(id, { filename: `${id}.${ext}` });
     moveToLibrary(id);
   } catch (err: any) {
@@ -100,9 +139,9 @@ async function downloadImageUrl(id: string, imageUrl: string, userAgent: string 
 }
 
 async function startDownload(id: string, url: string, type: string, quality: string, embedSubs: boolean, browserAuth?: string) {
-  const isAudio = type === 'audio';
+  let isAudio = type === 'audio';
   let isImage = type === 'image';
-  const containerExt = isAudio ? 'mp3' : isImage ? 'jpg' : 'mp4';
+  let containerExt = isAudio ? 'mp3' : isImage ? 'jpg' : 'mp4';
   const outputPath = join(process.cwd(), 'data', 'library', `${id}.%(ext)s`);
   const os = require('os');
   const platform = os.platform();
@@ -245,6 +284,18 @@ async function startDownload(id: string, url: string, type: string, quality: str
         thumbnail: realThumbnail,
         duration: String(info.duration || '')
       });
+
+      // AUTO-DETECT AUDIO-ONLY STREAMS (e.g. SoundCloud, podcasts)
+      if (!isAudio && !isImage && info.formats) {
+        // If NO format has a video codec, it's strictly audio
+        const hasVideo = info.formats.some((f: any) => f.vcodec !== 'none' && f.video_ext !== 'none');
+        if (!hasVideo) {
+          isAudio = true;
+          containerExt = 'mp3';
+          updateQueueItem(id, { filename: `${id}.mp3` });
+          console.log(`Auto-detected audio-only stream for ${id}, switching to MP3`);
+        }
+      }
     } catch (e: any) {
       const errMsg: string = e?.message || e?.stderr || String(e);
       
@@ -476,23 +527,28 @@ async function startDownload(id: string, url: string, type: string, quality: str
         try { fs.unlinkSync(vttPath); } catch(e) {}
       }
 
-      // Verify the file was actually downloaded (yt-dlp sometimes exits with 0 even on failure)
+      const finishUp = async (filePath: string) => {
+        await applyWatermarkPromise(filePath, id);
+        moveToLibrary(id);
+      };
+
+      // Verify the file was actually downloaded
       if (isImage) {
         const imageFile = findImageFile();
         if (imageFile) {
           updateQueueItem(id, { filename: imageFile });
+          finishUp(join(process.cwd(), 'data', 'library', imageFile));
         } else {
-          updateQueueItem(id, { status: 'error', error: 'File was not downloaded. The post might be private, require login, or contain no media.' });
+          updateQueueItem(id, { status: 'error', error: 'File was not downloaded.' });
           return;
         }
       } else {
         if (!fs.existsSync(finalMp4) && !fs.existsSync(finalMp3)) {
-           updateQueueItem(id, { status: 'error', error: lastError || 'File was not downloaded. The post might be private, require login, or contain no media.' });
+           updateQueueItem(id, { status: 'error', error: lastError || 'File was not downloaded.' });
            return;
         }
+        finishUp(fs.existsSync(finalMp4) ? finalMp4 : finalMp3);
       }
-
-      moveToLibrary(id);
     };
 
     // Fallback: If yt-dlp failed to rename .temp.mp4 to .mp4 due to Windows Defender locks (WinError 32)
