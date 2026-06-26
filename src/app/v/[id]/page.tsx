@@ -65,6 +65,16 @@ export default async function SharedMediaPage({ params }: { params: Promise<{ id
       {/* Main Content (Clean Theme-Matched Layout) */}
       <main style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '1rem 2rem 1rem 2rem' }}>
         
+        {/* Page Title / Context */}
+        <div style={{ textAlign: 'center', marginBottom: '2rem' }}>
+          <h1 style={{ fontSize: '2.5rem', fontWeight: 900, color: 'var(--foreground)', margin: '0 0 0.5rem 0', letterSpacing: '-0.02em' }}>
+            Ready to Download
+          </h1>
+          <p style={{ fontSize: '1.1rem', color: 'var(--text-muted)', margin: 0 }}>
+            Someone securely shared this media file with you.
+          </p>
+        </div>
+
         <div style={{ 
           width: '100%', 
           maxWidth: '1200px', 
