@@ -223,18 +223,35 @@ export default function LibraryPage() {
         </div>
       ) : (
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(250px, 1fr))', gap: '1.5rem' }}>
-          {library.map(item => (
+          {library.map(item => {
+            const isPlaying = item.id === playingId;
+            return (
             <div
               key={item.id}
-              style={{ background: 'var(--card-bg)', borderRadius: '12px', overflow: 'hidden', cursor: 'pointer', border: '1px solid var(--border)', transition: 'transform 0.2s' }}
+              style={{ 
+                background: 'var(--card-bg)', 
+                borderRadius: '12px', 
+                overflow: 'hidden', 
+                cursor: 'pointer', 
+                border: isPlaying ? '2px solid var(--primary)' : '1px solid var(--border)', 
+                boxShadow: isPlaying ? '0 0 20px rgba(var(--primary-rgb, 0, 112, 243), 0.4)' : 'none',
+                transition: 'transform 0.2s, box-shadow 0.2s',
+                transform: isPlaying ? 'scale(1.02)' : 'scale(1)'
+              }}
               onClick={() => {
                 setPlayingId(item.id);
                 window.scrollTo({ top: 0, behavior: 'smooth' });
               }}
-              onMouseEnter={(e) => e.currentTarget.style.transform = 'scale(1.02)'}
-              onMouseLeave={(e) => e.currentTarget.style.transform = 'scale(1)'}
+              onMouseEnter={(e) => { if (!isPlaying) e.currentTarget.style.transform = 'scale(1.02)' }}
+              onMouseLeave={(e) => { if (!isPlaying) e.currentTarget.style.transform = 'scale(1)' }}
             >
               <div style={{ position: 'relative', paddingTop: '56.25%', background: '#000' }}>
+                {isPlaying && (
+                  <div style={{ position: 'absolute', top: '10px', left: '10px', background: 'var(--primary)', color: 'white', padding: '4px 10px', borderRadius: '8px', fontSize: '0.75rem', fontWeight: 'bold', zIndex: 20, boxShadow: '0 4px 10px rgba(0,0,0,0.3)', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                    <div style={{ width: '6px', height: '6px', background: 'white', borderRadius: '50%' }} />
+                    NOW PLAYING
+                  </div>
+                )}
                 {(() => {
                   const isImageFile = item.filename && ['.jpg', '.jpeg', '.png', '.webp', '.avif', '.gif'].some(ext => item.filename.toLowerCase().endsWith(ext));
                   const isVideoFile = item.filename && ['.mp4', '.webm', '.mkv', '.mov'].some(ext => item.filename.toLowerCase().endsWith(ext));
@@ -299,7 +316,8 @@ export default function LibraryPage() {
                 </button>
               </div>
             </div>
-          ))}
+            );
+          })}
         </div>
       )}
     </div>
