@@ -17,7 +17,7 @@ export async function GET(request: Request) {
       noCheckCertificates: true,
       youtubeSkipDashManifest: true,
       flatPlaylist: true,
-    });
+    } as any) as any;
     
     if (info._type === 'playlist') {
       return NextResponse.json({

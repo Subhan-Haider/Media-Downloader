@@ -42,7 +42,7 @@ export async function POST(request: Request) {
             dumpJson: true,
             flatPlaylist: true,
             playlistEnd: 5 // Just check the 5 newest
-          }) as any;
+          } as any) as any;
 
           const entries = Array.isArray(info) ? info : info.entries || [info];
           for (const entry of entries) {

@@ -132,7 +132,7 @@ export async function GET(request: Request) {
       noWarnings: true,
       noCallHome: true,
       noCheckCertificates: true,
-    });
+    } as any);
     
     // Convert Node.js readable stream to Web API ReadableStream
     const readableStream = new ReadableStream({

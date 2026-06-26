@@ -53,7 +53,7 @@ export default function Home() {
     return () => clearTimeout(timer);
   }, [urls[0]]);
 
-  const handleDownload = async (type: 'video' | 'audio') => {
+  const handleDownload = async (type: 'video' | 'audio' | 'image') => {
     const validUrls = urls.filter(u => u.trim().startsWith('http'));
     if (validUrls.length === 0) return;
     

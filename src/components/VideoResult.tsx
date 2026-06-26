@@ -54,7 +54,7 @@ export default function VideoResult({ info, url }: VideoResultProps) {
     setDownloadingId(format.itag);
     
     // Check if we need to poll progress
-    if (format.itag === 'best' || extractAudio || (!extractAudio && format.hasVideo && !format.hasAudio)) {
+    if (format.itag === 'best' || extractAudio || (!extractAudio && (format as any).hasVideo && !(format as any).hasAudio)) {
       const pollProgress = setInterval(async () => {
         try {
           const res = await fetch(`/api/progress?id=${tempId}`);
