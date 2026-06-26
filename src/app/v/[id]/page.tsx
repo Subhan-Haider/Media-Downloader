@@ -134,10 +134,10 @@ export default async function SharedMediaPage({ params }: { params: Promise<{ id
         </div>
 
         {/* Disclaimer Box */}
-        <div style={{ marginTop: '2rem', maxWidth: '800px', padding: '1rem 1.5rem', background: 'var(--card-bg)', border: '1px solid var(--border)', borderRadius: '12px', display: 'flex', alignItems: 'center', gap: '1rem', color: 'var(--text-muted)' }}>
-          <Info size={24} color="var(--primary)" style={{ flexShrink: 0 }} />
+        <div style={{ marginTop: '2rem', maxWidth: '800px', padding: '1rem 1.5rem', background: 'rgba(239, 68, 68, 0.05)', border: '1px solid rgba(239, 68, 68, 0.2)', borderRadius: '12px', display: 'flex', alignItems: 'center', gap: '1rem', color: 'var(--text-muted)' }}>
+          <Info size={24} color="#ef4444" style={{ flexShrink: 0 }} />
           <p style={{ margin: 0, fontSize: '0.85rem', lineHeight: 1.5 }}>
-            <strong style={{ color: 'var(--foreground)' }}>Disclaimer:</strong> Please ensure you trust the sender before downloading any files. Media Downloader does not scan files for malware and is not responsible for the contents of user-shared files.
+            <strong style={{ color: '#ef4444' }}>Disclaimer:</strong> This application is created strictly for educational purposes only. The developers do not endorse, encourage, or support the downloading of copyrighted material. You are solely responsible for ensuring you have the legal right or permission to download and store any media using this tool.
           </p>
         </div>
       </main>
