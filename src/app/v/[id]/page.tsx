@@ -133,6 +133,11 @@ export default async function SharedMediaPage({ params }: { params: Promise<{ id
           </div>
         </div>
       </main>
+
+      {/* Minimal Footer for Public Share Page */}
+      <footer style={{ padding: '2rem', textAlign: 'center', color: 'var(--text-muted)', fontSize: '0.85rem', fontWeight: 500 }}>
+        &copy; {new Date().getFullYear()} Media Downloader. All rights reserved.
+      </footer>
     </div>
   );
 }
