@@ -59,9 +59,9 @@ export default function LibraryPage() {
   });
 
   return (
-    <div style={{ maxWidth: '1200px', margin: '0 auto' }}>
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '2rem' }}>
-        <h1 style={{ fontSize: '2rem', margin: 0 }}>Media Library</h1>
+    <div style={{ maxWidth: '1200px', margin: '0 auto', padding: '0 0.5rem', boxSizing: 'border-box' }}>
+      <div className="page-header">
+        <h1 className="page-title">Media Library</h1>
         <div style={{ display: 'flex', gap: '1rem', position: 'relative' }}>
           <button
             onClick={() => setShowSettings(!showSettings)}

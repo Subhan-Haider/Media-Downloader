@@ -27,9 +27,9 @@ export default function QueuePage() {
   };
 
   return (
-    <div style={{ maxWidth: '800px', margin: '0 auto' }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
-        <h1 style={{ fontSize: '2rem', margin: 0 }}>Downloads Queue</h1>
+    <div style={{ maxWidth: '800px', margin: '0 auto', padding: '0 0.5rem', boxSizing: 'border-box' }}>
+      <div className="page-header">
+        <h1 className="page-title">Downloads Queue</h1>
         {queue.some(i => i.status === 'error' || i.status === 'completed') && (
           <button 
             onClick={handleClear}
@@ -53,8 +53,8 @@ export default function QueuePage() {
       ) : (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
           {queue.map(item => (
-            <div key={item.id} style={{ padding: '1.5rem', background: 'var(--card-bg)', borderRadius: '12px', display: 'flex', alignItems: 'center', gap: '1rem', border: '1px solid var(--border)' }}>
-              <div style={{ position: 'relative', width: '80px', height: '45px', flexShrink: 0 }}>
+            <div key={item.id} className="queue-item">
+              <div className="queue-thumb" style={{ position: 'relative', width: '80px', height: '45px', flexShrink: 0 }}>
                 {(() => {
                   const isImageFile = item.filename && ['.jpg', '.jpeg', '.png', '.webp', '.avif', '.gif'].some(ext => item.filename.toLowerCase().endsWith(ext));
                   const isLocalImage = item.status === 'completed' && isImageFile;

@@ -12,7 +12,7 @@ export default function AboutPage() {
         <div style={{ display: 'inline-block', padding: '0.4rem 1.2rem', background: 'rgba(0,0,0,0.03)', border: '1px solid rgba(0,0,0,0.05)', borderRadius: '100px', color: 'var(--text-muted)', fontSize: '0.9rem', fontWeight: 600, letterSpacing: '0.05em', marginBottom: '1.5rem', backdropFilter: 'blur(10px)' }}>
           OUR STORY
         </div>
-        <h1 style={{ fontSize: '4.5rem', fontWeight: 800, margin: 0, letterSpacing: '-0.04em', lineHeight: 1.1, textShadow: '0 10px 30px rgba(0,0,0,0.05)' }}>
+        <h1 className="about-title" style={{ fontWeight: 800, margin: 0, letterSpacing: '-0.04em', lineHeight: 1.1, textShadow: '0 10px 30px rgba(0,0,0,0.05)' }}>
           About <span style={{ background: 'linear-gradient(135deg, var(--primary), var(--accent))', WebkitBackgroundClip: 'text', color: 'transparent', textShadow: '0 0 40px rgba(79, 70, 229, 0.2)' }}>Media Server</span>
         </h1>
         <p style={{ color: 'var(--text-muted)', fontSize: '1.3rem', marginTop: '1.5rem', opacity: 0.9, maxWidth: '700px', margin: '1.5rem auto 0 auto', lineHeight: 1.6 }}>
@@ -20,7 +20,7 @@ export default function AboutPage() {
         </p>
       </div>
 
-      <div className="glass-panel" style={{ width: '100%', maxWidth: '900px', padding: '4rem', borderRadius: '32px', display: 'flex', flexDirection: 'column', gap: '3rem', position: 'relative' }}>
+      <div className="glass-panel" style={{ width: '100%', maxWidth: '900px', padding: '2.5rem', borderRadius: '32px', display: 'flex', flexDirection: 'column', gap: '3rem', position: 'relative' }}>
         
         <section>
           <h2 style={{ fontSize: '2rem', fontWeight: 700, marginBottom: '1.5rem' }}>The Philosophy</h2>

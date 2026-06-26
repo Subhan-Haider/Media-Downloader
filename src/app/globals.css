@@ -493,3 +493,150 @@ html {
   }
 }
 
+/* ============================================
+   UTILITY CLASSES FOR MOBILE
+   ============================================ */
+
+/* Responsive page wrapper */
+.page-container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 1rem;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+/* Responsive page header row (title + action button) */
+.page-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 2rem;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+
+.page-title {
+  font-size: 2rem;
+  margin: 0;
+  font-weight: 800;
+}
+
+/* Responsive input + button row */
+.input-row {
+  display: flex;
+  gap: 0.75rem;
+  margin-bottom: 2rem;
+  flex-wrap: wrap;
+}
+
+.input-row input {
+  flex: 1 1 200px;
+  min-width: 0;
+}
+
+.input-row button {
+  flex-shrink: 0;
+}
+
+/* Queue item card */
+.queue-item {
+  padding: 1.25rem;
+  background: var(--card-bg);
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  border: 1px solid var(--border);
+  flex-wrap: wrap;
+}
+
+/* Subscription item card */
+.sub-item {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 1rem 1.25rem;
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  flex-wrap: wrap;
+}
+
+@media (max-width: 640px) {
+  .page-title {
+    font-size: 1.6rem;
+  }
+  
+  /* About page large heading */
+  h1[style*="4.5rem"] {
+    font-size: 2.5rem !important;
+  }
+  h1[style*="4rem"] {
+    font-size: 2.2rem !important;
+  }
+
+  /* About pillar grid — single column on mobile */
+  [style*="minmax(350px"] {
+    grid-template-columns: 1fr !important;
+  }
+  
+  /* Glass panel — tighter padding on mobile */
+  .glass-panel[style*="padding: '4rem'"],
+  .glass-panel[style*="padding: '3rem'"] {
+    padding: 1.5rem !important;
+  }
+
+  /* Subscriptions/Queue header wrap */
+  .page-header {
+    gap: 0.75rem;
+  }
+
+  /* Queue item thumbnail hidden on mobile to save space */
+  .queue-thumb {
+    display: none;
+  }
+
+  /* Queue action buttons right-align properly */
+  .queue-item-action {
+    margin-left: auto;
+  }
+}
+
+@media (max-width: 480px) {
+  .page-title {
+    font-size: 1.4rem;
+  }
+
+  /* Home glass panel */
+  .glass-panel[style*="padding: '3rem'"] {
+    padding: 1.25rem !important;
+  }
+}
+
+/* Prevent any element from causing horizontal scroll */
+* {
+  max-width: 100%;
+}
+
+img, video, audio {
+  max-width: 100%;
+  height: auto;
+}
+
+/* About page responsive title */
+.about-title {
+  font-size: 4.5rem;
+}
+
+@media (max-width: 768px) {
+  .about-title {
+    font-size: 3rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .about-title {
+    font-size: 2.2rem;
+  }
+}
