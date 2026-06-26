@@ -90,22 +90,22 @@ Run this entire block in your server's terminal from inside the `Media-Downloade
 # 1. Install Node.js dependencies
 npm install
 
-# 2. Set up the Python virtual environment and install instaloader
+# 2. Delete any existing Python venv & Next.js cache to prevent Turbopack crash
+rm -rf venv .next
+
+# 3. Build the Next.js production app safely
+npm run build
+
+# 4. Recreate the Python virtual environment and install instaloader
 python3 -m venv venv
 source venv/bin/activate
 pip install instaloader
 
-# 3. Ignore Python venv to prevent Next.js build crash
-echo -e "\n# Python Virtual Environments\nvenv/\n.venv/" >> .gitignore
-
-# 4. Install PM2 globally (if you haven't already)
+# 5. Install PM2 globally (if you haven't already)
 sudo npm install -g pm2
 
-# 5. Build the Next.js production app
-npm run build
-
 # 6. Start the app in the background using PM2
-pm2 start npm --name "media-downloader" -- run start
+pm2 restart media-downloader || pm2 start npm --name "media-downloader" -- run start
 
 # 7. Save the PM2 process so it restarts if the server reboots
 pm2 save
