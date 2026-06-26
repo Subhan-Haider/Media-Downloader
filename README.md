@@ -95,16 +95,19 @@ python3 -m venv venv
 source venv/bin/activate
 pip install instaloader
 
-# 3. Install PM2 globally (if you haven't already)
+# 3. Ignore Python venv to prevent Next.js build crash
+echo -e "\n# Python Virtual Environments\nvenv/\n.venv/" >> .gitignore
+
+# 4. Install PM2 globally (if you haven't already)
 sudo npm install -g pm2
 
-# 4. Build the Next.js production app
+# 5. Build the Next.js production app
 npm run build
 
-# 5. Start the app in the background using PM2
+# 6. Start the app in the background using PM2
 pm2 start npm --name "media-downloader" -- run start
 
-# 6. Save the PM2 process so it restarts if the server reboots
+# 7. Save the PM2 process so it restarts if the server reboots
 pm2 save
 ```
 
