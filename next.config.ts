@@ -16,13 +16,6 @@ const nextConfig: NextConfig = {
   outputFileTracingExcludes: {
     '*': ['**/venv/**', 'venv/**', 'data/venv/**'],
   },
-  experimental: {
-    turbopack: {
-      unstable_fileSystemWatching: {
-        ignored: ['**/venv/**'],
-      },
-    },
-  },
 };
 
 export default nextConfig;

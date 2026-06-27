@@ -4,12 +4,13 @@ import { join } from 'path';
 import fs from 'fs';
 
 export async function POST(request: Request) {
-  try {
-    const { url, browserAuth } = await request.json();
+  const { url, browserAuth } = await request.json();
 
-    if (!url) {
-      return NextResponse.json({ error: 'URL is required' }, { status: 400 });
-    }
+  if (!url) {
+    return NextResponse.json({ error: 'URL is required' }, { status: 400 });
+  }
+
+  try {
 
     const options: any = {
       dumpSingleJson: true,
