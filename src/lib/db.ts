@@ -28,8 +28,9 @@ export interface DatabaseSchema {
   library: MediaItem[];
   subscriptions: Subscription[];
   settings: {
-    autoDeleteDays: number; // 0 means disabled
+    autoDeleteDays: number;
   };
+  notificationPreferences: Record<string, boolean>;
 }
 
 const defaultSchema: DatabaseSchema = {
@@ -38,7 +39,8 @@ const defaultSchema: DatabaseSchema = {
   subscriptions: [],
   settings: {
     autoDeleteDays: 2,
-  }
+  },
+  notificationPreferences: {}, // empty = all enabled by default
 };
 
 // Ensure db exists

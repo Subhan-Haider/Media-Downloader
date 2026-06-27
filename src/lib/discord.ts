@@ -2,6 +2,7 @@
  * Discord Webhook Notifier
  * Sends rich embed notifications for all server events — downloads, visitors, library, subscriptions.
  */
+import { readDB } from '@/lib/db';
 
 const WEBHOOK_URL = process.env.DISCORD_WEBHOOK_URL;
 
@@ -109,6 +110,13 @@ interface NotifyOptions {
 
 export async function notifyDiscord(opts: NotifyOptions): Promise<void> {
   if (!WEBHOOK_URL) return;
+
+  // 🔕 Check per-event toggle — if explicitly set to false, skip
+  try {
+    const db = readDB();
+    const prefs = db.notificationPreferences || {};
+    if (prefs[opts.event] === false) return;
+  } catch (_) {}
 
   const color = COLORS[opts.event] ?? 0x5865F2;
   const shareLink = `https://media.subhan.tech/v/${opts.id}`;

@@ -1,7 +1,7 @@
 "use client";
 
 import Link from 'next/link';
-import { Download, ListMusic, Tv, Rss } from 'lucide-react';
+import { Download, ListMusic, Tv, Rss, Settings } from 'lucide-react';
 import { usePathname } from 'next/navigation';
 import { useEffect, useState } from 'react';
 
@@ -144,6 +144,10 @@ export default function Navigation() {
           <Link href="/subscriptions" className={`nav-item${isActive('/subscriptions') ? ' active' : ''}`}>
             <Rss size={20} />
             <span className="nav-label">Subscriptions</span>
+          </Link>
+          <Link href="/settings" className={`nav-item${isActive('/settings') ? ' active' : ''}`}>
+            <Settings size={20} />
+            <span className="nav-label">Settings</span>
           </Link>
         </div>
       </nav>
