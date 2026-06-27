@@ -135,28 +135,32 @@ If you want to run this application permanently on a Linux server (like an Ubunt
 Run this entire block in your server's terminal from inside the `Media-Downloader` directory to pull the latest code, install dependencies, build the app, and restart it in the background:
 
 ```bash
-# 1. Pull the latest code and install Node.js dependencies
+# 1. Pull the latest code
+git stash
 git pull
+
+# 2. Clean install
+rm -rf node_modules .next
 npm install
 
-rm -rf node_modules venv .next
-npm install
+# 3. Delete venv BEFORE building (prevents Turbopack symlink panic on Linux)
+deactivate 2>/dev/null; rm -rf venv
 
-# 2. Build the Next.js production app safely
+# 4. Build the Next.js production app
 npm run build
 
-# 3. Recreate the Python virtual environment and install python dependencies
+# 5. Recreate the Python virtual environment AFTER build
 python3 -m venv venv
 source venv/bin/activate
 pip install instaloader curl-cffi
 
-# 4. Install PM2 globally (if you haven't already)
+# 6. Install PM2 globally (if you haven't already)
 sudo npm install -g pm2
 
-# 5. Start the app in the background using PM2
+# 7. Start the app in the background using PM2
 pm2 restart media-downloader || pm2 start npm --name "media-downloader" -- run start
 
-# 6. Save the PM2 process so it restarts if the server reboots
+# 8. Save the PM2 process so it restarts if the server reboots
 pm2 save
 ```
 
