@@ -348,17 +348,6 @@ export default function LibraryPage() {
               return (
                 <div style={{ width: '100%', background: '#050505', display: 'flex', justifyContent: 'center', position: 'relative' }}>
                   <img src={`/api/media/${playingId}`} alt="Image" style={{ width: '100%', maxHeight: '70vh', objectFit: 'contain' }} />
-                  <div style={{
-                    position: 'absolute',
-                    bottom: '25px', /* Since images don't have video controls, we can put it lower */
-                    right: '25px',
-                    pointerEvents: 'none',
-                    userSelect: 'none',
-                    opacity: 0.85,
-                    zIndex: 10
-                  }}>
-                    <img src="/watermark.png" alt="" style={{ width: '80px', height: 'auto', filter: 'drop-shadow(0 4px 6px rgba(0,0,0,0.5))' }} />
-                  </div>
                 </div>
               );
             }
@@ -366,17 +355,6 @@ export default function LibraryPage() {
             return (
               <div style={{ width: '100%', background: '#050505', display: 'flex', justifyContent: 'center', position: 'relative' }}>
                 <video src={`/api/media/${playingId}`} poster={library.find(i => i.id === playingId)?.thumbnail} controls autoPlay style={{ width: '100%', maxHeight: '70vh' }} />
-                <div style={{
-                  position: 'absolute',
-                  bottom: '45px',
-                  right: '10px',
-                  pointerEvents: 'none',
-                  userSelect: 'none',
-                  opacity: 0.85,
-                  zIndex: 10
-                }}>
-                  <img src="/watermark.png" alt="" style={{ width: '80px', height: 'auto', filter: 'drop-shadow(0 4px 6px rgba(0,0,0,0.5))' }} />
-                </div>
               </div>
             );
           })()}
