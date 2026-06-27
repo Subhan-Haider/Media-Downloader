@@ -216,9 +216,12 @@ async function startDownload(id: string, url: string, type: string, quality: str
   }
 
   const isInstagram = url.includes('instagram.com');
+  const isYouTube = url.includes('youtube.com') || url.includes('youtu.be');
   // Instagram no longer supports --username/--password; use a cookies.txt file instead
   const cookiesPath = join(process.cwd(), 'data', 'instagram_cookies.txt');
   const hasCookies = require('fs').existsSync(cookiesPath);
+  const ytCookiesPath = join(process.cwd(), 'data', 'youtube_cookies.txt');
+  const hasYtCookies = require('fs').existsSync(ytCookiesPath);
 
   // --- Instagram image post special handling ---
   if (isInstagram && !isAudio) {
@@ -312,9 +315,12 @@ async function startDownload(id: string, url: string, type: string, quality: str
       const metaOptions: any = {
         dumpJson: true,
         noWarnings: true,
-        noCheckCertificates: true
+        noCheckCertificates: true,
+        jsRuntimes: `node:"${process.execPath}"`
       };
-      if (browserAuth && browserAuth !== 'none') {
+      if (isYouTube && hasYtCookies) {
+        metaOptions.cookies = ytCookiesPath;
+      } else if (browserAuth && browserAuth !== 'none') {
         metaOptions.cookiesFromBrowser = browserAuth;
       }
       const info = await youtubedl(url, metaOptions) as any;
@@ -473,7 +479,9 @@ async function startDownload(id: string, url: string, type: string, quality: str
     '--no-warnings',
     '--no-check-certificates',
     '--rm-cache-dir',
-    '--write-info-json'
+    '--write-info-json',
+    '--concurrent-fragments', '5',
+    '--js-runtimes', `node:${process.execPath}`
   ];
 
   if (fs.existsSync(ffmpegPath)) {
@@ -498,6 +506,8 @@ async function startDownload(id: string, url: string, type: string, quality: str
   // Inject auth for Instagram (cookies file) or other sites (browser cookies)
   if (isInstagram && hasCookies) {
     args.push('--cookies', cookiesPath);
+  } else if (isYouTube && hasYtCookies) {
+    args.push('--cookies', ytCookiesPath);
   } else if (browserAuth && browserAuth !== 'none') {
     args.push('--cookies-from-browser', browserAuth);
   }
@@ -625,12 +635,16 @@ subprocess.stderr.on('data', (data: Buffer) => {
           updateQueueItem(id, { filename: imageFile });
           finishUp(join(process.cwd(), 'data', 'library', imageFile));
         } else {
-          updateQueueItem(id, { status: 'error', error: 'File was not downloaded.' });
+          updateQueueItem(id, { status: 'error', error: 'File was not downloaded. The post might be private, require login, or contain no media.' });
           return;
         }
       } else {
+        let finalError = lastError || 'File was not downloaded. The post might be private, require login, or contain no media.';
+        if (finalError.includes('Sign in to confirm your age')) {
+          finalError = 'Age-restricted video. Please paste your YouTube cookies in the Settings page to authenticate.';
+        }
         if (!fs.existsSync(finalMp4) && !fs.existsSync(finalMp3)) {
-           updateQueueItem(id, { status: 'error', error: lastError || 'File was not downloaded.' });
+           updateQueueItem(id, { status: 'error', error: finalError });
            return;
         }
         finishUp(fs.existsSync(finalMp4) ? finalMp4 : finalMp3);

@@ -1,5 +1,7 @@
 import { NextResponse } from 'next/server';
 import youtubedl from 'youtube-dl-exec';
+import { join } from 'path';
+import fs from 'fs';
 
 export async function POST(request: Request) {
   try {
@@ -13,10 +15,19 @@ export async function POST(request: Request) {
       dumpSingleJson: true,
       noWarnings: true,
       noCheckCertificates: true,
+      jsRuntimes: `node:"${process.execPath}"`
     };
+
+    const isYouTube = url.includes('youtube.com') || url.includes('youtu.be');
 
     if (browserAuth && browserAuth !== 'none') {
       options.cookiesFromBrowser = browserAuth;
+    }
+    
+    // Check for explicit youtube cookies file
+    const ytCookiesPath = join(process.cwd(), 'data', 'youtube_cookies.txt');
+    if (isYouTube && fs.existsSync(ytCookiesPath)) {
+      options.cookies = ytCookiesPath;
     }
 
     const info = await youtubedl(url, options) as any;
@@ -45,6 +56,10 @@ export async function POST(request: Request) {
       qualities 
     });
   } catch (error: any) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    let errMsg = error.message || String(error);
+    if (errMsg.includes('Sign in to confirm your age')) {
+      errMsg = 'Age-restricted video. Please paste your YouTube cookies in the Settings page to authenticate.';
+    }
+    return NextResponse.json({ error: errMsg }, { status: 500 });
   }
 }

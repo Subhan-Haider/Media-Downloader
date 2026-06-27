@@ -77,6 +77,9 @@ export default function SettingsPage() {
   const [prefs, setPrefs] = useState<Record<string, boolean>>({});
   const [saving, setSaving] = useState<string | null>(null);
   const [saved, setSaved] = useState<string | null>(null);
+  const [ytCookies, setYtCookies] = useState('');
+  const [savingCookies, setSavingCookies] = useState(false);
+  const [cookiesSaved, setCookiesSaved] = useState(false);
 
   useEffect(() => {
     fetch('/api/notifications').then(r => r.json()).then(d => setPrefs(d.preferences || {}));
@@ -123,6 +126,25 @@ export default function SettingsPage() {
   };
 
   const enabledCount = ALL_EVENTS.filter(e => isEnabled(e)).length;
+
+  const saveCookies = async () => {
+    setSavingCookies(true);
+    try {
+      await fetch('/api/cookies', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ cookies: ytCookies }),
+      });
+      setCookiesSaved(true);
+      setTimeout(() => setCookiesSaved(false), 2000);
+      setYtCookies('');
+    } catch (e) {
+      console.error(e);
+      alert('Failed to save cookies');
+    } finally {
+      setSavingCookies(false);
+    }
+  };
 
   return (
     <>
@@ -198,9 +220,9 @@ export default function SettingsPage() {
       <div className="notif-page">
         <div className="notif-header">
           <div>
-            <h1 className="page-title">Notification Settings</h1>
+            <h1 className="page-title">Settings</h1>
             <p style={{ margin: '0.25rem 0 0', color: 'var(--text-muted)', fontSize: '0.9rem' }}>
-              Control which Discord notifications are sent
+              Authentication and Notification Preferences
             </p>
           </div>
           <div className="notif-header-actions">
@@ -223,6 +245,58 @@ export default function SettingsPage() {
           <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>
             Changes save instantly
           </div>
+        </div>
+
+        <div className="notif-group">
+          <div className="notif-group-title">YouTube Authentication</div>
+          <div className="notif-card" style={{ padding: '1.25rem' }}>
+            <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', margin: '0 0 1rem 0' }}>
+              Paste your exported YouTube cookies here (Netscape format) to bypass age restrictions and login walls. 
+              The text will be saved securely on the server.
+            </p>
+            <textarea
+              value={ytCookies}
+              onChange={e => setYtCookies(e.target.value)}
+              placeholder="# Netscape HTTP Cookie File&#10;..."
+              style={{
+                width: '100%',
+                height: '120px',
+                padding: '1rem',
+                borderRadius: '10px',
+                border: '1px solid var(--border)',
+                background: 'rgba(0,0,0,0.02)',
+                color: 'var(--foreground)',
+                fontFamily: 'monospace',
+                fontSize: '0.85rem',
+                resize: 'vertical',
+                marginBottom: '1rem'
+              }}
+            />
+            <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+              <button 
+                className="bulk-btn success" 
+                onClick={saveCookies}
+                disabled={savingCookies || !ytCookies.trim()}
+                style={{ opacity: (savingCookies || !ytCookies.trim()) ? 0.5 : 1 }}
+              >
+                {savingCookies ? 'Saving...' : 'Save Cookies'}
+              </button>
+              <div className={`save-badge ${cookiesSaved ? 'show' : ''}`} style={{ display: 'flex' }}>
+                <Check size={14} /> Cookies updated successfully!
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div className="notif-header-actions" style={{ marginBottom: '1rem' }}>
+          <span style={{ fontSize: '1.1rem', fontWeight: 700 }}>Notifications</span>
+          <div style={{ flex: 1 }} />
+          <button className="bulk-btn success" onClick={enableAll}>
+            <Bell size={15} /> Enable All
+          </button>
+          <button className="bulk-btn danger" onClick={disableAll}>
+            <BellOff size={15} /> Disable All
+          </button>
         </div>
 
         {NOTIFICATION_GROUPS.map(({ group, events }) => (

@@ -1,6 +1,8 @@
 import { NextResponse } from 'next/server';
 import youtubedl from 'youtube-dl-exec';
 import { notifyDiscord, getIp, getCountry, getUserAgent } from '@/lib/discord';
+import fs from 'fs';
+import { join } from 'path';
 
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
@@ -39,13 +41,23 @@ export async function GET(request: Request) {
       });
     }
 
-    const info = await youtubedl(url, {
+    const options: any = {
       dumpSingleJson: true,
       noWarnings: true,
       noCheckCertificates: true,
       youtubeSkipDashManifest: true,
       flatPlaylist: true,
-    } as any) as any;
+      jsRuntimes: `node:"${process.execPath}"`
+    };
+
+    const isYouTube = url.includes('youtube.com') || url.includes('youtu.be');
+    
+    const ytCookiesPath = join(process.cwd(), 'data', 'youtube_cookies.txt');
+    if (isYouTube && fs.existsSync(ytCookiesPath)) {
+      options.cookies = ytCookiesPath;
+    }
+
+    const info = await youtubedl(url, options) as any;
     
     if (info._type === 'playlist') {
       // 🔔 Discord: playlist detected
@@ -91,7 +103,7 @@ export async function GET(request: Request) {
       formats,
     });
   } catch (error: any) {
-    const errMsg: string = error?.message || error?.stderr || String(error);
+    let errMsg: string = error?.message || error?.stderr || String(error);
     
     if ((url.includes('twitter.com') || url.includes('x.com')) && errMsg.toLowerCase().includes('no video')) {
       try {
@@ -180,6 +192,10 @@ export async function GET(request: Request) {
     }
 
     console.error('Error fetching video info:', error.stderr || error);
-    return NextResponse.json({ error: error.stderr || error.message || String(error) }, { status: 500 });
+    errMsg = error.stderr || error.message || String(error);
+    if (errMsg.includes('Sign in to confirm your age')) {
+      errMsg = 'Age-restricted video. Please paste your YouTube cookies in the Settings page to authenticate.';
+    }
+    return NextResponse.json({ error: errMsg }, { status: 500 });
   }
 }
