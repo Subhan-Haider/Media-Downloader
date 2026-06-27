@@ -27,7 +27,7 @@ export async function POST(request: Request) {
     // Check for explicit youtube cookies file
     const ytCookiesPath = join(process.cwd(), 'data', 'youtube_cookies.txt');
     if (isYouTube && fs.existsSync(ytCookiesPath)) {
-      options.cookies = ytCookiesPath;
+      options.cookies = `"${ytCookiesPath}"`;
     }
 
     const info = await youtubedl(url, options) as any;
