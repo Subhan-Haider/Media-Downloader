@@ -4,7 +4,7 @@ import { join } from 'path';
 
 export async function POST(request: Request) {
   try {
-    const { cookies } = await request.json();
+    const { cookies, type } = await request.json();
 
     if (!cookies) {
       return NextResponse.json({ error: 'Missing cookies string' }, { status: 400 });
@@ -15,7 +15,8 @@ export async function POST(request: Request) {
       fs.mkdirSync(dataDir, { recursive: true });
     }
 
-    const cookiesPath = join(dataDir, 'youtube_cookies.txt');
+    const filename = type === 'instagram' ? 'instagram_cookies.txt' : 'youtube_cookies.txt';
+    const cookiesPath = join(dataDir, filename);
     fs.writeFileSync(cookiesPath, cookies, 'utf8');
 
     return NextResponse.json({ success: true });

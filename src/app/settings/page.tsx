@@ -81,6 +81,10 @@ export default function SettingsPage() {
   const [savingCookies, setSavingCookies] = useState(false);
   const [cookiesSaved, setCookiesSaved] = useState(false);
 
+  const [igCookies, setIgCookies] = useState('');
+  const [savingIgCookies, setSavingIgCookies] = useState(false);
+  const [igCookiesSaved, setIgCookiesSaved] = useState(false);
+
   useEffect(() => {
     fetch('/api/notifications').then(r => r.json()).then(d => setPrefs(d.preferences || {}));
   }, []);
@@ -127,22 +131,28 @@ export default function SettingsPage() {
 
   const enabledCount = ALL_EVENTS.filter(e => isEnabled(e)).length;
 
-  const saveCookies = async () => {
-    setSavingCookies(true);
+  const saveCookies = async (type: 'youtube' | 'instagram') => {
+    const isYt = type === 'youtube';
+    const cookieStr = isYt ? ytCookies : igCookies;
+    const setSaving = isYt ? setSavingCookies : setSavingIgCookies;
+    const setSaved = isYt ? setCookiesSaved : setIgCookiesSaved;
+    const clearCookies = isYt ? setYtCookies : setIgCookies;
+
+    setSaving(true);
     try {
       await fetch('/api/cookies', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ cookies: ytCookies }),
+        body: JSON.stringify({ cookies: cookieStr, type }),
       });
-      setCookiesSaved(true);
-      setTimeout(() => setCookiesSaved(false), 2000);
-      setYtCookies('');
+      setSaved(true);
+      setTimeout(() => setSaved(false), 2000);
+      clearCookies('');
     } catch (e) {
       console.error(e);
-      alert('Failed to save cookies');
+      alert(`Failed to save ${type} cookies`);
     } finally {
-      setSavingCookies(false);
+      setSaving(false);
     }
   };
 
@@ -248,11 +258,11 @@ export default function SettingsPage() {
         </div>
 
         <div className="notif-group">
-          <div className="notif-group-title">YouTube Authentication</div>
-          <div className="notif-card" style={{ padding: '1.25rem' }}>
+          <div className="notif-group-title">Platform Authentication</div>
+          <div className="notif-card" style={{ padding: '1.25rem', marginBottom: '1rem' }}>
+            <div style={{ fontWeight: 600, marginBottom: '0.5rem' }}>YouTube Cookies</div>
             <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', margin: '0 0 1rem 0' }}>
               Paste your exported YouTube cookies here (Netscape format) to bypass age restrictions and login walls. 
-              The text will be saved securely on the server.
             </p>
             <textarea
               value={ytCookies}
@@ -260,7 +270,7 @@ export default function SettingsPage() {
               placeholder="# Netscape HTTP Cookie File&#10;..."
               style={{
                 width: '100%',
-                height: '120px',
+                height: '100px',
                 padding: '1rem',
                 borderRadius: '10px',
                 border: '1px solid var(--border)',
@@ -275,17 +285,56 @@ export default function SettingsPage() {
             <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
               <button 
                 className="bulk-btn success" 
-                onClick={saveCookies}
+                onClick={() => saveCookies('youtube')}
                 disabled={savingCookies || !ytCookies.trim()}
                 style={{ opacity: (savingCookies || !ytCookies.trim()) ? 0.5 : 1 }}
               >
-                {savingCookies ? 'Saving...' : 'Save Cookies'}
+                {savingCookies ? 'Saving...' : 'Save YouTube Cookies'}
               </button>
               <div className={`save-badge ${cookiesSaved ? 'show' : ''}`} style={{ display: 'flex' }}>
-                <Check size={14} /> Cookies updated successfully!
+                <Check size={14} /> Saved successfully!
               </div>
             </div>
           </div>
+
+          <div className="notif-card" style={{ padding: '1.25rem' }}>
+            <div style={{ fontWeight: 600, marginBottom: '0.5rem' }}>Instagram Cookies</div>
+            <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', margin: '0 0 1rem 0' }}>
+              Paste your exported Instagram cookies here (Netscape format) to download private posts, stories, and reels. 
+            </p>
+            <textarea
+              value={igCookies}
+              onChange={e => setIgCookies(e.target.value)}
+              placeholder="# Netscape HTTP Cookie File&#10;..."
+              style={{
+                width: '100%',
+                height: '100px',
+                padding: '1rem',
+                borderRadius: '10px',
+                border: '1px solid var(--border)',
+                background: 'rgba(0,0,0,0.02)',
+                color: 'var(--foreground)',
+                fontFamily: 'monospace',
+                fontSize: '0.85rem',
+                resize: 'vertical',
+                marginBottom: '1rem'
+              }}
+            />
+            <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+              <button 
+                className="bulk-btn success" 
+                onClick={() => saveCookies('instagram')}
+                disabled={savingIgCookies || !igCookies.trim()}
+                style={{ opacity: (savingIgCookies || !igCookies.trim()) ? 0.5 : 1 }}
+              >
+                {savingIgCookies ? 'Saving...' : 'Save Instagram Cookies'}
+              </button>
+              <div className={`save-badge ${igCookiesSaved ? 'show' : ''}`} style={{ display: 'flex' }}>
+                <Check size={14} /> Saved successfully!
+              </div>
+            </div>
+          </div>
+        </div>
         </div>
 
         <div className="notif-header-actions" style={{ marginBottom: '1rem' }}>
