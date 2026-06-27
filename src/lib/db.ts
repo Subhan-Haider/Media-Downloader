@@ -31,6 +31,10 @@ export interface DatabaseSchema {
   settings: {
     autoDeleteDays: number;
     enableWatermark?: boolean;
+    themeColor?: string;
+    siteTitle?: string;
+    siteDescription?: string;
+    announcementText?: string;
   };
   notificationPreferences: Record<string, boolean>;
   admins: string[];
@@ -43,6 +47,10 @@ const defaultSchema: DatabaseSchema = {
   settings: {
     autoDeleteDays: 2,
     enableWatermark: true,
+    themeColor: '#0070f3',
+    siteTitle: 'Media Downloader',
+    siteDescription: 'Download your favorite media easily.',
+    announcementText: '',
   },
   notificationPreferences: {}, // empty = all enabled by default
   admins: ['setupg98@gmail.com'], // Default hardcoded admin

@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { ShieldAlert, Server, HardDrive, Cpu, Activity, Settings, RefreshCw, Terminal, Trash2, X, Users, UserPlus, UserMinus } from 'lucide-react';
+import { ShieldAlert, Server, HardDrive, Cpu, Activity, Settings, RefreshCw, Terminal, Trash2, X, Users, UserPlus, UserMinus, Palette } from 'lucide-react';
 
 export default function AdminDashboard() {
   const [stats, setStats] = useState<any>(null);
@@ -18,10 +18,18 @@ export default function AdminDashboard() {
   const [newAdminEmail, setNewAdminEmail] = useState('');
   const [isSuperAdmin, setIsSuperAdmin] = useState(false);
 
+  // Branding State
+  const [themeColor, setThemeColor] = useState('#0070f3');
+  const [siteTitle, setSiteTitle] = useState('Media Server');
+  const [siteDescription, setSiteDescription] = useState('');
+  const [announcementText, setAnnouncementText] = useState('');
+  const [savingBrand, setSavingBrand] = useState(false);
+
   useEffect(() => {
     fetchStats();
     fetchAdmins();
     fetchAuth();
+    fetchSettings();
     // Poll every 5 seconds
     const interval = setInterval(fetchStats, 5000);
     return () => clearInterval(interval);
@@ -102,6 +110,34 @@ export default function AdminDashboard() {
       const data = await res.json();
       setIsSuperAdmin(data.isSuperAdmin);
     } catch (e) {}
+  };
+
+  const fetchSettings = async () => {
+    try {
+      const res = await fetch('/api/settings');
+      const data = await res.json();
+      if (data.settings) {
+        if (data.settings.themeColor) setThemeColor(data.settings.themeColor);
+        if (data.settings.siteTitle) setSiteTitle(data.settings.siteTitle);
+        if (data.settings.siteDescription) setSiteDescription(data.settings.siteDescription);
+        if (data.settings.announcementText !== undefined) setAnnouncementText(data.settings.announcementText);
+      }
+    } catch (e) {}
+  };
+
+  const saveBranding = async () => {
+    setSavingBrand(true);
+    try {
+      await fetch('/api/settings', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ settings: { themeColor, siteTitle, siteDescription, announcementText } })
+      });
+      alert('Branding updated successfully! Refresh the page to see changes.');
+    } catch (e) {
+      alert('Failed to save branding.');
+    }
+    setSavingBrand(false);
   };
 
   const handleAdminAction = async (action: 'add' | 'remove', email: string) => {
@@ -249,6 +285,75 @@ export default function AdminDashboard() {
           <Settings size={18} />
           Go to Settings
         </Link>
+      </div>
+
+      <div style={{ marginTop: '2rem' }}>
+        <h2 style={{ fontSize: '1.5rem', marginBottom: '1rem' }}>Branding & Communication</h2>
+        <div className="glass-panel" style={{ padding: '1.5rem', borderRadius: '12px', marginBottom: '2rem' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '1rem', color: 'var(--text-secondary)' }}>
+            <Palette size={20} />
+            <h3 style={{ margin: 0 }}>Global Brand Settings</h3>
+          </div>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '1.5rem' }}>
+            
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+              <label style={{ fontSize: '0.9rem', color: 'var(--text-secondary)' }}>Site Title</label>
+              <input 
+                type="text" 
+                value={siteTitle}
+                onChange={e => setSiteTitle(e.target.value)}
+                style={{ padding: '0.7rem 1rem', borderRadius: '8px', border: '1px solid var(--border)', background: 'rgba(0,0,0,0.2)', color: 'var(--foreground)' }}
+              />
+            </div>
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+              <label style={{ fontSize: '0.9rem', color: 'var(--text-secondary)' }}>SEO Description</label>
+              <input 
+                type="text" 
+                value={siteDescription}
+                onChange={e => setSiteDescription(e.target.value)}
+                style={{ padding: '0.7rem 1rem', borderRadius: '8px', border: '1px solid var(--border)', background: 'rgba(0,0,0,0.2)', color: 'var(--foreground)' }}
+              />
+            </div>
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+              <label style={{ fontSize: '0.9rem', color: 'var(--text-secondary)' }}>Theme Color</label>
+              <div style={{ display: 'flex', gap: '1rem' }}>
+                <input 
+                  type="color" 
+                  value={themeColor}
+                  onChange={e => setThemeColor(e.target.value)}
+                  style={{ width: '40px', height: '40px', padding: '0', border: 'none', borderRadius: '8px', cursor: 'pointer', background: 'transparent' }}
+                />
+                <input 
+                  type="text" 
+                  value={themeColor}
+                  onChange={e => setThemeColor(e.target.value)}
+                  style={{ flex: 1, padding: '0.7rem 1rem', borderRadius: '8px', border: '1px solid var(--border)', background: 'rgba(0,0,0,0.2)', color: 'var(--foreground)' }}
+                />
+              </div>
+            </div>
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', gridColumn: '1 / -1' }}>
+              <label style={{ fontSize: '0.9rem', color: 'var(--text-secondary)' }}>Global Announcement Banner</label>
+              <input 
+                type="text" 
+                value={announcementText}
+                onChange={e => setAnnouncementText(e.target.value)}
+                placeholder="E.g. Server maintenance tonight! (Leave blank to hide banner)"
+                style={{ padding: '0.7rem 1rem', borderRadius: '8px', border: '1px solid var(--border)', background: 'rgba(0,0,0,0.2)', color: 'var(--foreground)' }}
+              />
+            </div>
+
+          </div>
+          <button 
+            onClick={saveBranding}
+            disabled={savingBrand}
+            style={{ marginTop: '1.5rem', padding: '0.7rem 1.5rem', borderRadius: '8px', border: 'none', background: 'var(--primary)', color: 'white', cursor: 'pointer', fontWeight: 500 }}
+          >
+            {savingBrand ? 'Saving...' : 'Save Branding'}
+          </button>
+        </div>
       </div>
 
       <div style={{ marginTop: '2rem' }}>

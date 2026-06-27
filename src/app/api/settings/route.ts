@@ -45,6 +45,11 @@ export async function POST(req: Request) {
         settingValue: settings.enableWatermark ? 'Enabled' : 'Disabled',
       }).catch(() => {});
     }
+
+    if (settings?.themeColor !== undefined) db.settings.themeColor = settings.themeColor;
+    if (settings?.siteTitle !== undefined) db.settings.siteTitle = settings.siteTitle;
+    if (settings?.siteDescription !== undefined) db.settings.siteDescription = settings.siteDescription;
+    if (settings?.announcementText !== undefined) db.settings.announcementText = settings.announcementText;
     
     writeDB(db);
     return NextResponse.json({ success: true, settings: db.settings });
