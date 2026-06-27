@@ -16,7 +16,19 @@ export async function GET(
   
   const db = readDB();
   const item = db.library.find(i => i.id === id);
-  if (!item) return new NextResponse('Not found', { status: 404 });
+  if (!item) {
+    // 🔔 Discord: dead share link
+    notifyDiscord({
+      event: 'media_not_found',
+      title: `File ID \`${id}\` not found`,
+      url: request.url,
+      id,
+      visitorIp: getIp(request),
+      visitorCountry: getCountry(request),
+      visitorDevice: getUserAgent(request),
+    }).catch(() => {});
+    return new NextResponse('Not found', { status: 404 });
+  }
 
   const filePath = join(process.cwd(), 'data', 'library', item.filename);
   
@@ -54,6 +66,20 @@ export async function GET(
     if (isDownload) {
       notifyDiscord({
         event: 'file_download',
+        title: item.title,
+        url: request.url,
+        id: item.id,
+        type: mediaType,
+        thumbnail: item.thumbnail,
+        visitorIp,
+        visitorCountry,
+        visitorDevice,
+        referer,
+      }).catch(() => {});
+    } else {
+      // Someone is streaming / playing in browser — not a save
+      notifyDiscord({
+        event: 'media_streamed',
         title: item.title,
         url: request.url,
         id: item.id,

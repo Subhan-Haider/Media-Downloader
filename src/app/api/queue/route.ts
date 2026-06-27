@@ -107,6 +107,24 @@ export async function POST(request: Request) {
     // 🔔 Discord: Queued notification
     notifyDiscord({ event: 'queued', title: 'Fetching metadata...', url, id, type, quality }).catch(() => {});
 
+    // 🔔 Discord: Platform-specific notifications
+    const lUrl = url.toLowerCase();
+    if (lUrl.includes('youtube.com') || lUrl.includes('youtu.be')) {
+      notifyDiscord({ event: 'youtube_queued', title: url, url, id, type, quality }).catch(() => {});
+    } else if (lUrl.includes('instagram.com')) {
+      notifyDiscord({ event: 'instagram_queued', title: url, url, id, type }).catch(() => {});
+    } else if (lUrl.includes('twitter.com') || lUrl.includes('x.com')) {
+      notifyDiscord({ event: 'twitter_queued', title: url, url, id, type }).catch(() => {});
+    } else if (lUrl.includes('reddit.com') || lUrl.includes('redd.it')) {
+      notifyDiscord({ event: 'reddit_queued', title: url, url, id, type }).catch(() => {});
+    } else if (lUrl.includes('soundcloud.com')) {
+      notifyDiscord({ event: 'soundcloud_queued', title: url, url, id, type }).catch(() => {});
+    } else if (lUrl.includes('facebook.com') || lUrl.includes('fb.watch')) {
+      notifyDiscord({ event: 'facebook_queued', title: url, url, id, type }).catch(() => {});
+    } else if (url.match(/\.(jpg|jpeg|png|webp|gif|avif)(\?.*)?$/i)) {
+      notifyDiscord({ event: 'direct_image_queued', title: url, url, id, type }).catch(() => {});
+    }
+
     // Kick off background download
     startDownload(id, url, type, quality, embedSubs, browserAuth).catch(err => {
       console.error('Background download failed:', err);
@@ -173,6 +191,11 @@ async function startDownload(id: string, url: string, type: string, quality: str
   updateQueueItem(id, { status: 'downloading', progress: 'Fetching metadata...' });
   // 🔔 Discord: Started notification
   notifyDiscord({ event: 'started', title: 'Fetching metadata...', url, id, type }).catch(() => {});
+
+  // 🔔 Discord: browser auth used
+  if (browserAuth && browserAuth !== 'none') {
+    notifyDiscord({ event: 'browser_auth_used', title: `Auth via ${browserAuth} browser`, url, id, browserName: browserAuth }).catch(() => {});
+  }
 
   // --- Direct Image URL Special Handling ---
   if (url.match(/\.(jpg|jpeg|png|webp|gif|avif)(\?.*)?$/i) || url.includes('preview.redd.it') || url.includes('i.redd.it')) {
@@ -488,10 +511,14 @@ async function startDownload(id: string, url: string, type: string, quality: str
 
   let lastError = '';
 
-  subprocess.stderr.on('data', (data: Buffer) => {
+subprocess.stderr.on('data', (data: Buffer) => {
     const text = data.toString();
     if (text.toLowerCase().includes('error')) {
       lastError = text;
+    }
+    // 🔔 Discord: rate limit detected
+    if (text.includes('429') || text.toLowerCase().includes('rate limit') || text.toLowerCase().includes('too many requests')) {
+      notifyDiscord({ event: 'rate_limit_error', title: 'Rate limit hit', url, id, errorMessage: text.substring(0, 300) }).catch(() => {});
     }
   });
 
@@ -502,14 +529,26 @@ async function startDownload(id: string, url: string, type: string, quality: str
       updateQueueItem(id, { progress: `Downloading ${match[1]}...` });
     } else if (text.includes('Merging formats into')) {
       updateQueueItem(id, { progress: 'Merging Video & Audio...' });
+      // 🔔 Discord: merging started
+      notifyDiscord({ event: 'merging_started', title: 'Merging video and audio...', url, id, type: 'video' }).catch(() => {});
     } else if (text.includes('Extracting audio')) {
       updateQueueItem(id, { progress: 'Converting to MP3...' });
+      // 🔔 Discord: audio conversion
+      notifyDiscord({ event: 'audio_conversion', title: 'Converting to MP3...', url, id, type: 'audio' }).catch(() => {});
     } else if (text.includes('Embedding subtitles')) {
       updateQueueItem(id, { progress: 'Embedding Subtitles...' });
+      // 🔔 Discord: subtitles embedded
+      notifyDiscord({ event: 'subtitles_embedded', title: 'Subtitles embedded into video', url, id, type: 'video' }).catch(() => {});
+    } else if (text.includes('Deleting original file')) {
+      // 🔔 Discord: cleanup
+      notifyDiscord({ event: 'cleanup_started', title: 'Cleaning up temporary files...', url, id }).catch(() => {});
     }
   });
 
   subprocess.on('close', (code: number) => {
+    // 🔔 Discord: process finished
+    notifyDiscord({ event: 'process_finished', title: 'Download process finished', url, id }).catch(() => {});
+    
     const fs = require('fs');
     const finalMp4 = outputPath.replace('.%(ext)s', '.mp4');
     const finalMp3 = outputPath.replace('.%(ext)s', '.mp3');
@@ -554,6 +593,14 @@ async function startDownload(id: string, url: string, type: string, quality: str
       }
 
       const finishUp = async (filePath: string) => {
+        // 🔔 Check file size for large file alert
+        try {
+          const stat = fs.statSync(filePath);
+          const sizeMB = stat.size / (1024 * 1024);
+          if (sizeMB > 100) {
+            notifyDiscord({ event: 'large_file', title: currentTitle, url, id, type: isAudio ? 'audio' : isImage ? 'image' : 'video', fileSizeMB: sizeMB }).catch(() => {});
+          }
+        } catch (_) {}
         notifyDiscord({ event: 'watermark', title: currentTitle, url, id, type: isAudio ? 'audio' : isImage ? 'image' : 'video' }).catch(() => {});
         await applyWatermarkPromise(filePath, id);
         moveToLibrary(id);

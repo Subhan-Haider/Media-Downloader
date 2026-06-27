@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { readDB, writeDB } from '@/lib/db';
+import { notifyDiscord } from '@/lib/discord';
 
 export async function GET() {
   const db = readDB();
@@ -16,7 +17,20 @@ export async function POST(req: Request) {
     }
     
     if (typeof settings?.autoDeleteDays === 'number') {
+      const oldValue = db.settings.autoDeleteDays;
       db.settings.autoDeleteDays = settings.autoDeleteDays;
+
+      // 🔔 Discord: settings changed
+      notifyDiscord({
+        event: 'settings_changed',
+        title: 'Auto-delete setting updated',
+        url: '',
+        id: 'settings',
+        settingKey: 'autoDeleteDays',
+        settingValue: settings.autoDeleteDays === 0
+          ? 'Never (Keep Forever)'
+          : `${settings.autoDeleteDays} day${settings.autoDeleteDays !== 1 ? 's' : ''}`,
+      }).catch(() => {});
     }
     
     writeDB(db);

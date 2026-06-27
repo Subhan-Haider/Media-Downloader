@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { readDB, writeDB } from '@/lib/db';
 import youtubedl from 'youtube-dl-exec';
 import { randomBytes } from 'crypto';
+import { notifyDiscord, getIp, getCountry, getUserAgent } from '@/lib/discord';
 
 export async function GET() {
   const db = readDB();
@@ -17,23 +18,49 @@ export async function POST(request: Request) {
       const newSub = {
         id: randomBytes(8).toString('hex'),
         url,
-        title: url, // Could be fetched via ytdl but keep simple for now
+        title: url,
         addedAt: Date.now()
       };
       db.subscriptions.push(newSub);
       writeDB(db);
+
+      // 🔔 Discord: subscription added
+      notifyDiscord({
+        event: 'subscription_added',
+        title: url,
+        url,
+        id: newSub.id,
+        channelName: url,
+        subCount: db.subscriptions.length,
+        visitorIp: getIp(request),
+        visitorDevice: getUserAgent(request),
+        visitorCountry: getCountry(request),
+      }).catch(() => {});
+
       return NextResponse.json({ success: true, subscription: newSub });
     }
 
     if (action === 'remove') {
+      const sub = db.subscriptions.find(s => s.id === id);
       db.subscriptions = db.subscriptions.filter(s => s.id !== id);
       writeDB(db);
+
+      // 🔔 Discord: subscription removed
+      if (sub) {
+        notifyDiscord({
+          event: 'subscription_removed',
+          title: sub.title || sub.url,
+          url: sub.url,
+          id: sub.id,
+          channelName: sub.title || sub.url,
+          subCount: db.subscriptions.length,
+        }).catch(() => {});
+      }
+
       return NextResponse.json({ success: true });
     }
 
     if (action === 'sync') {
-      // Very basic sync: fetch latest 5 videos from each sub, if not in library/queue, add to queue
-      // In production, this runs via a chron job
       const urlsToDownload: string[] = [];
 
       for (const sub of db.subscriptions) {
@@ -41,7 +68,7 @@ export async function POST(request: Request) {
           const info = await youtubedl(sub.url, {
             dumpJson: true,
             flatPlaylist: true,
-            playlistEnd: 5 // Just check the 5 newest
+            playlistEnd: 5
           } as any) as any;
 
           const entries = Array.isArray(info) ? info : info.entries || [info];
@@ -58,7 +85,6 @@ export async function POST(request: Request) {
         }
       }
 
-      // Automatically queue them
       for (const vUrl of urlsToDownload) {
         await fetch(new URL('/api/queue', request.url).toString(), {
           method: 'POST',
@@ -66,6 +92,16 @@ export async function POST(request: Request) {
           body: JSON.stringify({ url: vUrl, type: 'video', embedSubs: false })
         }).catch(console.error);
       }
+
+      // 🔔 Discord: subscriptions synced
+      notifyDiscord({
+        event: 'subscriptions_synced',
+        title: `Synced ${db.subscriptions.length} subscriptions`,
+        url: '',
+        id: 'sync',
+        subCount: db.subscriptions.length,
+        newVideoCount: urlsToDownload.length,
+      }).catch(() => {});
 
       return NextResponse.json({ success: true, queuedCount: urlsToDownload.length });
     }

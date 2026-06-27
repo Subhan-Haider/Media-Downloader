@@ -48,6 +48,19 @@ export async function GET(request: Request) {
     } as any) as any;
     
     if (info._type === 'playlist') {
+      // 🔔 Discord: playlist detected
+      notifyDiscord({
+        event: 'playlist_detected',
+        title: info.title || 'Playlist',
+        url,
+        id: 'playlist',
+        thumbnail: info.thumbnails?.[0]?.url,
+        playlistCount: info.entries?.length || 0,
+        visitorIp: getIp(request),
+        visitorDevice: getUserAgent(request),
+        visitorCountry: getCountry(request),
+      }).catch(() => {});
+
       return NextResponse.json({
         isPlaylist: true,
         title: info.title,
