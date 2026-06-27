@@ -1,9 +1,11 @@
 import { NextResponse } from 'next/server';
 import { join } from 'path';
 import { stat, createReadStream } from 'fs';
-import { readDB } from '@/lib/db';
+import { readDB, writeDB } from '@/lib/db';
 import { promisify } from 'util';
 import { notifyDiscord, getIp, getCountry, getUserAgent } from '@/lib/discord';
+import { cookies } from 'next/headers';
+import { adminAuth } from '@/lib/firebaseAdmin';
 
 const statAsync = promisify(stat);
 
@@ -145,4 +147,32 @@ export async function DELETE(request: Request, context: any) {
   }
 
   return NextResponse.json({ success: true });
+}
+
+export async function PATCH(request: Request, context: any) {
+  try {
+    const params = await context.params;
+    const id = params.id;
+    
+    const cookieStore = await cookies();
+    const session = cookieStore.get('session')?.value;
+    if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+
+    const decodedToken = await adminAuth.verifySessionCookie(session);
+    if (!decodedToken.email) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+
+    const { isPrivate } = await request.json();
+    if (typeof isPrivate !== 'boolean') return NextResponse.json({ error: 'Invalid payload' }, { status: 400 });
+
+    const db = readDB();
+    const index = db.library.findIndex(i => i.id === id);
+    if (index === -1) return new NextResponse('Not found', { status: 404 });
+
+    db.library[index].isPrivate = isPrivate;
+    writeDB(db);
+
+    return NextResponse.json({ success: true, isPrivate });
+  } catch (error) {
+    return NextResponse.json({ error: 'Failed to update privacy' }, { status: 500 });
+  }
 }

@@ -4,7 +4,7 @@ import { notifyDiscord } from '@/lib/discord';
 
 export async function GET() {
   const db = readDB();
-  return NextResponse.json({ settings: db.settings || { autoDeleteDays: 2 } });
+  return NextResponse.json({ settings: db.settings || { autoDeleteDays: 2, enableWatermark: true } });
 }
 
 export async function POST(req: Request) {
@@ -13,7 +13,7 @@ export async function POST(req: Request) {
     const db = readDB();
     
     if (!db.settings) {
-      db.settings = { autoDeleteDays: 2 };
+      db.settings = { autoDeleteDays: 2, enableWatermark: true };
     }
     
     if (typeof settings?.autoDeleteDays === 'number') {
@@ -30,6 +30,19 @@ export async function POST(req: Request) {
         settingValue: settings.autoDeleteDays === 0
           ? 'Never (Keep Forever)'
           : `${settings.autoDeleteDays} day${settings.autoDeleteDays !== 1 ? 's' : ''}`,
+      }).catch(() => {});
+    }
+
+    if (typeof settings?.enableWatermark === 'boolean') {
+      db.settings.enableWatermark = settings.enableWatermark;
+      
+      notifyDiscord({
+        event: 'settings_changed',
+        title: 'Watermark setting updated',
+        url: '',
+        id: 'settings',
+        settingKey: 'enableWatermark',
+        settingValue: settings.enableWatermark ? 'Enabled' : 'Disabled',
       }).catch(() => {});
     }
     

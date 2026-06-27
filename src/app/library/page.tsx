@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import type { MediaItem } from '@/lib/db';
-import { Play, Download, Trash2, X, ArrowUpRight, Wand2, Music, Volume2, Share2, Settings, Repeat, Repeat1 } from 'lucide-react';
+import { Play, Download, Trash2, X, ArrowUpRight, Wand2, Music, Volume2, Share2, Settings, Repeat, Repeat1, Lock, Unlock } from 'lucide-react';
 
 export default function LibraryPage() {
   const [library, setLibrary] = useState<MediaItem[]>([]);
@@ -10,7 +10,9 @@ export default function LibraryPage() {
   const [filter, setFilter] = useState<'All' | 'Video' | 'Audio' | 'Image'>('All');
   const [showSettings, setShowSettings] = useState(false);
   const [autoDeleteDays, setAutoDeleteDays] = useState<number>(2);
+  const [enableWatermark, setEnableWatermark] = useState<boolean>(true);
   const [repeatMode, setRepeatMode] = useState<'off' | 'one' | 'loop'>('off');
+  const [isAdmin, setIsAdmin] = useState(false);
 
   const cycleRepeat = () => {
     setRepeatMode(prev => prev === 'off' ? 'loop' : prev === 'loop' ? 'one' : 'off');
@@ -28,23 +30,59 @@ export default function LibraryPage() {
       try {
         const res = await fetch('/api/settings');
         const data = await res.json();
-        if (data.settings) setAutoDeleteDays(data.settings.autoDeleteDays);
+        if (data.settings) {
+          setAutoDeleteDays(data.settings.autoDeleteDays);
+          if (data.settings.enableWatermark !== undefined) {
+            setEnableWatermark(data.settings.enableWatermark);
+          }
+        }
+      } catch(e) { }
+    };
+    const fetchAuth = async () => {
+      try {
+        const res = await fetch('/api/auth/me');
+        const data = await res.json();
+        setIsAdmin(data.isAdmin);
       } catch(e) { }
     };
     fetchLibrary();
     fetchSettings();
+    fetchAuth();
   }, []);
 
-  const saveSettings = async (days: number) => {
+  const saveSettings = async (days: number, watermark?: boolean) => {
+    const w = watermark !== undefined ? watermark : enableWatermark;
     setAutoDeleteDays(days);
+    setEnableWatermark(w);
+    
     await fetch('/api/settings', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ settings: { autoDeleteDays: days } })
+      body: JSON.stringify({ settings: { autoDeleteDays: days, enableWatermark: w } })
     });
   };
 
+  const togglePrivacy = async (e: React.MouseEvent, id: string, currentIsPrivate: boolean) => {
+    e.stopPropagation();
+    const newIsPrivate = !currentIsPrivate;
+    
+    // Optimistic update
+    setLibrary(prev => prev.map(i => i.id === id ? { ...i, isPrivate: newIsPrivate } : i));
+    
+    try {
+      await fetch(`/api/media/${id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ isPrivate: newIsPrivate })
+      });
+    } catch (e) {
+      // Revert if error
+      setLibrary(prev => prev.map(i => i.id === id ? { ...i, isPrivate: currentIsPrivate } : i));
+    }
+  };
+
   const filteredLibrary = library.filter(item => {
+    if (item.isPrivate && !isAdmin) return false;
     if (filter === 'All') return true;
     if (!item.filename) return false;
     const ext = item.filename.toLowerCase();
@@ -63,16 +101,18 @@ export default function LibraryPage() {
       <div className="page-header">
         <h1 className="page-title">Media Library</h1>
         <div style={{ display: 'flex', gap: '1rem', position: 'relative' }}>
-          <button
-            onClick={() => setShowSettings(!showSettings)}
-            style={{
-              padding: '0.6rem', borderRadius: '8px', border: '1px solid var(--border)',
-              background: showSettings ? 'var(--hover)' : 'var(--card-bg)', color: 'var(--foreground)', cursor: 'pointer',
-              display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'background 0.2s'
-            }}
-          >
-            <Settings size={20} />
-          </button>
+          {isAdmin && (
+            <button
+              onClick={() => setShowSettings(!showSettings)}
+              style={{
+                padding: '0.6rem', borderRadius: '8px', border: '1px solid var(--border)',
+                background: showSettings ? 'var(--hover)' : 'var(--card-bg)', color: 'var(--foreground)', cursor: 'pointer',
+                display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'background 0.2s'
+              }}
+            >
+              <Settings size={20} />
+            </button>
+          )}
 
           {showSettings && (
             <div style={{
@@ -81,7 +121,7 @@ export default function LibraryPage() {
               padding: '1rem', width: '250px', zIndex: 50, boxShadow: '0 10px 40px rgba(0,0,0,0.5)'
             }}>
               <h3 style={{ margin: '0 0 1rem 0', fontSize: '1rem' }}>Storage Settings</h3>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', marginBottom: '1.5rem' }}>
                 <label style={{ fontSize: '0.9rem', color: 'var(--text-muted)' }}>Auto-Delete Files After:</label>
                 <select
                   value={autoDeleteDays}
@@ -101,10 +141,27 @@ export default function LibraryPage() {
                   This affects all downloaded videos, audios, and images to save server space.
                 </p>
               </div>
+
+              <h3 style={{ margin: '0 0 1rem 0', fontSize: '1rem' }}>Processing Settings</h3>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                <input 
+                  type="checkbox" 
+                  id="watermarkToggle" 
+                  checked={enableWatermark}
+                  onChange={(e) => saveSettings(autoDeleteDays, e.target.checked)}
+                  style={{ cursor: 'pointer', width: '16px', height: '16px', accentColor: 'var(--primary)' }}
+                />
+                <label htmlFor="watermarkToggle" style={{ fontSize: '0.9rem', cursor: 'pointer' }}>
+                  Apply Watermark (Slow)
+                </label>
+              </div>
+              <p style={{ margin: '0.5rem 0 0 0', fontSize: '0.8rem', color: 'var(--text-muted)' }}>
+                Applying watermarks requires re-encoding the entire video. Disable this if downloads are getting stuck.
+              </p>
             </div>
           )}
 
-          {library.length > 0 && (
+          {isAdmin && library.length > 0 && (
             <button
               onClick={async () => {
                 if (confirm('Are you sure you want to permanently delete ALL videos from your library? This cannot be undone.')) {
@@ -338,25 +395,27 @@ export default function LibraryPage() {
               Save to Device
             </a>
 
-            <button
-              onClick={async () => {
-                if (confirm('Are you sure you want to permanently delete this file?')) {
-                  await fetch(`/api/media/${playingId}`, { method: 'DELETE' });
-                  setLibrary(prev => prev.filter(i => i.id !== playingId));
-                  setPlayingId(null);
-                }
-              }}
-              style={{
-                display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem',
-                padding: '0.7rem 0.5rem', background: 'transparent', color: '#ef4444', border: '1px solid rgba(239, 68, 68, 0.3)',
-                cursor: 'pointer', fontWeight: 500, borderRadius: '12px', fontSize: '0.875rem', transition: 'all 0.2s', width: '100%'
-              }}
-              onMouseEnter={e => { e.currentTarget.style.background = 'rgba(239, 68, 68, 0.1)' }}
-              onMouseLeave={e => { e.currentTarget.style.background = 'transparent' }}
-            >
-              <Trash2 size={16} />
-              Delete
-            </button>
+            {isAdmin && (
+              <button
+                onClick={async () => {
+                  if (confirm('Are you sure you want to permanently delete this file?')) {
+                    await fetch(`/api/media/${playingId}`, { method: 'DELETE' });
+                    setLibrary(prev => prev.filter(i => i.id !== playingId));
+                    setPlayingId(null);
+                  }
+                }}
+                style={{
+                  display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem',
+                  padding: '0.7rem 0.5rem', background: 'transparent', color: '#ef4444', border: '1px solid rgba(239, 68, 68, 0.3)',
+                  cursor: 'pointer', fontWeight: 500, borderRadius: '12px', fontSize: '0.875rem', transition: 'all 0.2s', width: '100%'
+                }}
+                onMouseEnter={e => { e.currentTarget.style.background = 'rgba(239, 68, 68, 0.1)' }}
+                onMouseLeave={e => { e.currentTarget.style.background = 'transparent' }}
+              >
+                <Trash2 size={16} />
+                Delete
+              </button>
+            )}
 
             <button
               onClick={() => setPlayingId(null)}
@@ -445,33 +504,64 @@ export default function LibraryPage() {
                     </>
                   );
                 })()}
-                <div style={{ position: 'absolute', bottom: '0.5rem', right: '0.5rem', background: 'rgba(0,0,0,0.8)', color: 'white', padding: '0.2rem 0.5rem', borderRadius: '4px', fontSize: '0.75rem', fontWeight: 600, letterSpacing: '0.05em' }}>
-                  {item.filename.split('.').pop()?.toUpperCase()}
+                <div style={{ position: 'absolute', bottom: '0.5rem', right: '0.5rem', display: 'flex', gap: '0.5rem' }}>
+                  {item.isPrivate ? (
+                    <div 
+                      onClick={(e) => isAdmin ? togglePrivacy(e, item.id, true) : undefined}
+                      style={{ 
+                        background: 'rgba(239, 68, 68, 0.9)', color: 'white', padding: '0.2rem 0.5rem', borderRadius: '4px', display: 'flex', alignItems: 'center', gap: '4px',
+                        cursor: isAdmin ? 'pointer' : 'default', transition: 'background 0.2s'
+                      }} 
+                      onMouseEnter={e => { if (isAdmin) e.currentTarget.style.background = 'rgba(220, 38, 38, 1)' }}
+                      onMouseLeave={e => { if (isAdmin) e.currentTarget.style.background = 'rgba(239, 68, 68, 0.9)' }}
+                      title={isAdmin ? "Click to make Public" : "Private Download"}
+                    >
+                      <Lock size={12} />
+                    </div>
+                  ) : isAdmin ? (
+                    <div 
+                      onClick={(e) => togglePrivacy(e, item.id, false)}
+                      style={{ 
+                        background: 'rgba(0, 0, 0, 0.5)', color: 'white', padding: '0.2rem 0.5rem', borderRadius: '4px', display: 'flex', alignItems: 'center', gap: '4px',
+                        cursor: 'pointer', transition: 'background 0.2s'
+                      }} 
+                      onMouseEnter={e => e.currentTarget.style.background = 'rgba(239, 68, 68, 0.8)'}
+                      onMouseLeave={e => e.currentTarget.style.background = 'rgba(0, 0, 0, 0.5)'}
+                      title="Click to make Private"
+                    >
+                      <Unlock size={12} />
+                    </div>
+                  ) : null}
+                  <div style={{ background: 'rgba(0,0,0,0.8)', color: 'white', padding: '0.2rem 0.5rem', borderRadius: '4px', fontSize: '0.75rem', fontWeight: 600, letterSpacing: '0.05em' }}>
+                    {item.filename.split('.').pop()?.toUpperCase()}
+                  </div>
                 </div>
               </div>
               <div style={{ padding: '1rem', display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '0.5rem' }}>
                 <h3 style={{ margin: 0, fontSize: '1rem', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden', flex: 1 }}>
                   {item.title}
                 </h3>
-                <button
-                  onClick={async (e) => {
-                    e.stopPropagation(); // prevent opening the player
-                    if (confirm('Delete this video?')) {
-                      await fetch(`/api/media/${item.id}`, { method: 'DELETE' });
-                      setLibrary(prev => prev.filter(i => i.id !== item.id));
-                      if (playingId === item.id) setPlayingId(null);
-                    }
-                  }}
-                  style={{
-                    background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-muted)',
-                    padding: '0.2rem', borderRadius: '4px', transition: 'color 0.2s'
-                  }}
-                  onMouseEnter={e => e.currentTarget.style.color = '#ef4444'}
-                  onMouseLeave={e => e.currentTarget.style.color = 'var(--text-muted)'}
-                  title="Delete Video"
-                >
-                  <Trash2 size={18} />
-                </button>
+                {isAdmin && (
+                  <button
+                    onClick={async (e) => {
+                      e.stopPropagation(); // prevent opening the player
+                      if (confirm('Delete this video?')) {
+                        await fetch(`/api/media/${item.id}`, { method: 'DELETE' });
+                        setLibrary(prev => prev.filter(i => i.id !== item.id));
+                        if (playingId === item.id) setPlayingId(null);
+                      }
+                    }}
+                    style={{
+                      background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-muted)',
+                      padding: '0.2rem', borderRadius: '4px', transition: 'color 0.2s'
+                    }}
+                    onMouseEnter={e => e.currentTarget.style.color = '#ef4444'}
+                    onMouseLeave={e => e.currentTarget.style.color = 'var(--text-muted)'}
+                    title="Delete Video"
+                  >
+                    <Trash2 size={18} />
+                  </button>
+                )}
               </div>
             </div>
             );

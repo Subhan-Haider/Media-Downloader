@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
-import { addToQueue, updateQueueItem, moveToLibrary, readDB, clearErrorsFromQueue, cleanupOldMedia } from '@/lib/db';
+import { addToQueue, updateQueueItem, moveToLibrary, readDB, clearErrorsFromQueue, clearAllQueue, cleanupOldMedia } from '@/lib/db';
+import { addLog } from '@/lib/logs';
 import youtubedl from 'youtube-dl-exec';
 import { join } from 'path';
 import { randomBytes } from 'crypto';
@@ -12,6 +13,11 @@ const ffmpegPathGlobal = join(process.cwd(), 'node_modules', 'ffmpeg-static', 'f
 
 function applyWatermarkPromise(filePath: string, id: string): Promise<void> {
   return new Promise((resolve) => {
+    const db = readDB();
+    if (db.settings?.enableWatermark === false) {
+      return resolve();
+    }
+
     const isVideo = filePath.endsWith('.mp4') || filePath.endsWith('.mkv') || filePath.endsWith('.webm');
     const isImage = filePath.endsWith('.jpg') || filePath.endsWith('.jpeg') || filePath.endsWith('.png') || filePath.endsWith('.webp');
     
@@ -41,22 +47,24 @@ function applyWatermarkPromise(filePath: string, id: string): Promise<void> {
     });
 
     wmProcess.on('close', (wmCode: number) => {
-      console.log('FFmpeg closed with code:', wmCode);
       if (wmCode === 0 && fs.existsSync(watermarkTemp)) {
         try { 
           fs.unlinkSync(filePath); 
           fs.renameSync(watermarkTemp, filePath); 
-          console.log('Watermark applied successfully.');
-        } catch(e) {
-          console.error('File rename error after watermark:', e);
+          addLog(`Watermark applied successfully for ${id}`, 'info');
+        } catch(e: any) {
+          addLog(`File rename error after watermark: ${e.message}`, 'error');
         }
       } else {
-        console.error('Watermark process failed or temp file missing. Code:', wmCode);
+        addLog(`Watermark process failed or temp file missing. Code: ${wmCode}`, 'error');
       }
       resolve();
     });
   });
 }
+
+// Map to track active download subprocesses
+const activeProcesses: Record<string, ReturnType<typeof spawn>> = {};
 
 export async function GET() {
   cleanupOldMedia(); // Auto-delete files based on settings
@@ -67,14 +75,40 @@ export async function GET() {
 export async function DELETE(request: Request) {
   const urlObj = new URL(request.url);
   const id = urlObj.searchParams.get('id');
+  const action = urlObj.searchParams.get('action');
+
+  if (action === 'kill_all') {
+    // Kill all active processes
+    for (const pid in activeProcesses) {
+      try { 
+        activeProcesses[pid].kill(); 
+        delete activeProcesses[pid];
+      } catch (e) {}
+    }
+    clearAllQueue();
+    addLog('Admin cleared the entire queue and killed all processes.', 'warn');
+    return NextResponse.json({ success: true });
+  }
+
   if (id) {
     const db = readDB();
     const item = db.queue.find(i => i.id === id);
     updateQueueItem(id, { status: 'error', error: 'Cancelled by user', progress: 'Cancelled' });
+    
+    // Kill the process if it's running
+    if (activeProcesses[id]) {
+      try { 
+        activeProcesses[id].kill(); 
+        delete activeProcesses[id];
+        addLog(`Killed active download process for ${id}`, 'warn');
+      } catch(e) {}
+    }
+
     // 🔔 Discord: Cancelled notification
     notifyDiscord({ event: 'cancelled', title: item?.title || 'Unknown', url: item?.url || '', id, type: item?.filename?.endsWith('.mp3') ? 'audio' : 'video' }).catch(() => {});
     return NextResponse.json({ success: true });
   }
+  
   clearErrorsFromQueue();
   return NextResponse.json({ success: true });
 }
@@ -82,7 +116,7 @@ export async function DELETE(request: Request) {
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    const { url, type, quality = '1080', embedSubs, browserAuth } = body; // type is 'video' or 'audio'
+    const { url, type, quality = '1080', embedSubs, browserAuth, isPrivate } = body; // type is 'video' or 'audio'
 
     if (!url) {
       return NextResponse.json({ error: 'URL is required' }, { status: 400 });
@@ -99,7 +133,8 @@ export async function POST(request: Request) {
       title: 'Fetching metadata...',
       filename: `${id}.${containerExt}`,
       status: 'queued' as const,
-      addedAt: Date.now()
+      addedAt: Date.now(),
+      isPrivate: !!isPrivate
     };
     
     addToQueue(item);
@@ -517,6 +552,8 @@ async function startDownload(id: string, url: string, type: string, quality: str
     stdio: ['ignore', 'pipe', 'pipe']
   });
 
+  activeProcesses[id] = subprocess;
+
   subprocess.unref(); // allow the parent to exit independently
 
   let lastError = '';
@@ -556,6 +593,7 @@ subprocess.stderr.on('data', (data: Buffer) => {
   });
 
   subprocess.on('close', (code: number) => {
+    delete activeProcesses[id];
     // 🔔 Discord: process finished
     notifyDiscord({ event: 'process_finished', title: 'Download process finished', url, id }).catch(() => {});
     
@@ -686,6 +724,7 @@ subprocess.stderr.on('data', (data: Buffer) => {
       handleSuccess();
     } else {
       const errMsg = lastError || `Exited with code ${code}`;
+      addLog(`yt-dlp failed for ${id}: ${errMsg}`, 'error');
       updateQueueItem(id, { status: 'error', error: errMsg });
       // 🔔 Discord: Error notification
       notifyDiscord({ event: 'error', title: currentTitle, url, id, type: isAudio ? 'audio' : isImage ? 'image' : 'video', errorMessage: errMsg }).catch(() => {});

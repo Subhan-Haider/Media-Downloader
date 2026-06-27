@@ -14,6 +14,7 @@ export interface MediaItem {
   duration?: string;
   error?: string;
   addedAt: number;
+  isPrivate?: boolean;
 }
 
 export interface Subscription {
@@ -29,8 +30,10 @@ export interface DatabaseSchema {
   subscriptions: Subscription[];
   settings: {
     autoDeleteDays: number;
+    enableWatermark?: boolean;
   };
   notificationPreferences: Record<string, boolean>;
+  admins: string[];
 }
 
 const defaultSchema: DatabaseSchema = {
@@ -39,8 +42,10 @@ const defaultSchema: DatabaseSchema = {
   subscriptions: [],
   settings: {
     autoDeleteDays: 2,
+    enableWatermark: true,
   },
   notificationPreferences: {}, // empty = all enabled by default
+  admins: ['setupg98@gmail.com'], // Default hardcoded admin
 };
 
 // Ensure db exists
@@ -104,6 +109,12 @@ export function clearErrorsFromQueue() {
   writeDB(db);
 }
 
+export function clearAllQueue() {
+  const db = readDB();
+  db.queue = [];
+  writeDB(db);
+}
+
 export function cleanupOldMedia() {
   const db = readDB();
   const days = db.settings?.autoDeleteDays ?? 2;
@@ -141,4 +152,15 @@ export function cleanupOldMedia() {
   if (changed) {
     writeDB(db);
   }
+}
+
+export function getAdmins() {
+  const db = readDB();
+  return db.admins || ['setupg98@gmail.com'];
+}
+
+export function setAdmins(admins: string[]) {
+  const db = readDB();
+  db.admins = admins;
+  writeDB(db);
 }

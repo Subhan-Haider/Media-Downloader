@@ -4,7 +4,7 @@ import { usePathname } from 'next/navigation';
 import Navigation from './Navigation';
 import Link from 'next/link';
 
-export default function MainLayout({ children }: { children: React.ReactNode }) {
+export default function MainLayout({ children, isAdmin }: { children: React.ReactNode, isAdmin?: boolean }) {
   const pathname = usePathname();
 
   // If this is a public share page, render without the global app shell (no nav, no padding, no footer)
@@ -15,7 +15,7 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
   // Otherwise, render the standard app shell
   return (
     <>
-      <Navigation />
+      <Navigation isAdmin={isAdmin} />
       
       <main style={{ paddingTop: '140px', minHeight: 'calc(100vh - 80px)', paddingBottom: '40px' }}>
         {children}

@@ -13,7 +13,20 @@ export default function Home() {
   const [metadata, setMetadata] = useState<{ title?: string, thumbnail?: string, duration?: string } | null>(null);
   const [fetchingQualities, setFetchingQualities] = useState(false);
   const [loading, setLoading] = useState<'video' | 'audio' | 'image' | null>(null);
+  const [isAdmin, setIsAdmin] = useState(false);
+  const [isPrivate, setIsPrivate] = useState(false);
   const router = useRouter();
+
+  useEffect(() => {
+    const fetchAuth = async () => {
+      try {
+        const res = await fetch('/api/auth/me');
+        const data = await res.json();
+        setIsAdmin(data.isAdmin);
+      } catch (e) {}
+    };
+    fetchAuth();
+  }, []);
 
   // Fetch metadata for the first URL only to keep UI clean
   useEffect(() => {
@@ -63,7 +76,7 @@ export default function Home() {
         await fetch('/api/queue', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ url, type, quality, embedSubs: true }),
+          body: JSON.stringify({ url, type, quality, embedSubs: true, isPrivate }),
         });
       }
       router.push('/queue');
@@ -185,6 +198,21 @@ export default function Home() {
           </div>
         )}
 
+        {isAdmin && (
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', background: 'rgba(239, 68, 68, 0.1)', padding: '0.8rem 1.2rem', borderRadius: '12px', border: '1px solid rgba(239, 68, 68, 0.2)', color: 'var(--foreground)' }}>
+            <input 
+              type="checkbox" 
+              id="privateToggle" 
+              checked={isPrivate} 
+              onChange={e => setIsPrivate(e.target.checked)} 
+              style={{ cursor: 'pointer', width: '18px', height: '18px', accentColor: '#ef4444' }}
+            />
+            <label htmlFor="privateToggle" style={{ cursor: 'pointer', fontSize: '0.95rem', fontWeight: 500, display: 'flex', alignItems: 'center', gap: '6px' }}>
+              <ShieldCheck size={18} color="#ef4444" />
+              Download Privately (Admin Only)
+            </label>
+          </div>
+        )}
 
         <div className="download-buttons">
           {/* Quality selector */}

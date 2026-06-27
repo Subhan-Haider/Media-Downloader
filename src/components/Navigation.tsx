@@ -1,14 +1,25 @@
 "use client";
 
 import Link from 'next/link';
-import { Download, ListMusic, Tv, Rss, Settings } from 'lucide-react';
-import { usePathname } from 'next/navigation';
+import { Download, ListMusic, Tv, Rss, Settings, LogOut, Shield } from 'lucide-react';
+import { usePathname, useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 
-export default function Navigation() {
+export default function Navigation({ isAdmin }: { isAdmin?: boolean }) {
   const pathname = usePathname();
+  const router = useRouter();
   const [visible, setVisible] = useState(true);
   const [lastScrollY, setLastScrollY] = useState(0);
+
+  const handleLogout = async () => {
+    try {
+      await fetch('/api/auth/logout', { method: 'POST' });
+      router.push('/login');
+      router.refresh();
+    } catch (e) {
+      console.error(e);
+    }
+  };
 
   useEffect(() => {
     const handleScroll = () => {
@@ -145,10 +156,22 @@ export default function Navigation() {
             <Rss size={20} />
             <span className="nav-label">Subscriptions</span>
           </Link>
-          <Link href="/settings" className={`nav-item${isActive('/settings') ? ' active' : ''}`}>
-            <Settings size={20} />
-            <span className="nav-label">Settings</span>
-          </Link>
+          {isAdmin && (
+            <>
+              <Link href="/settings" className={`nav-item${isActive('/settings') ? ' active' : ''}`}>
+                <Settings size={20} />
+                <span className="nav-label">Settings</span>
+              </Link>
+              <Link href="/admin" className={`nav-item${isActive('/admin') ? ' active' : ''}`}>
+                <Shield size={20} />
+                <span className="nav-label">Admin</span>
+              </Link>
+              <button onClick={handleLogout} className="nav-item" style={{ border: 'none', cursor: 'pointer' }}>
+                <LogOut size={20} />
+                <span className="nav-label">Logout</span>
+              </button>
+            </>
+          )}
         </div>
       </nav>
     </>

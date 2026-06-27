@@ -1,11 +1,12 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { Loader2, AlertCircle, CheckCircle, Video, Image as ImageIcon } from 'lucide-react';
+import { Loader2, AlertCircle, CheckCircle, Video, Image as ImageIcon, Lock } from 'lucide-react';
 import type { MediaItem } from '@/lib/db';
 
 export default function QueuePage() {
   const [queue, setQueue] = useState<MediaItem[]>([]);
+  const [isAdmin, setIsAdmin] = useState(false);
 
   useEffect(() => {
     const fetchQueue = async () => {
@@ -15,8 +16,16 @@ export default function QueuePage() {
         setQueue(data.queue || []);
       } catch (e) {}
     };
+    const fetchAuth = async () => {
+      try {
+        const res = await fetch('/api/auth/me');
+        const data = await res.json();
+        setIsAdmin(data.isAdmin);
+      } catch (e) {}
+    };
 
     fetchQueue();
+    fetchAuth();
     const interval = setInterval(fetchQueue, 1000);
     return () => clearInterval(interval);
   }, []);
@@ -26,33 +35,60 @@ export default function QueuePage() {
     setQueue(prev => prev.filter(i => i.status !== 'error' && i.status !== 'completed'));
   };
 
+  const filteredQueue = queue.filter(item => {
+    if (item.isPrivate && !isAdmin) return false;
+    return true;
+  });
+
   return (
     <div style={{ maxWidth: '800px', margin: '0 auto', padding: '0 0.5rem', boxSizing: 'border-box' }}>
       <div className="page-header">
         <h1 className="page-title">Downloads Queue</h1>
-        {queue.some(i => i.status === 'error' || i.status === 'completed') && (
-          <button 
-            onClick={handleClear}
-            style={{
-              padding: '0.6rem 1.2rem', borderRadius: '8px', border: '1px solid var(--border)',
-              background: 'var(--card-bg)', color: 'var(--foreground)', cursor: 'pointer',
-              fontWeight: 500, fontSize: '0.9rem', transition: 'background 0.2s'
-            }}
-            onMouseEnter={e => e.currentTarget.style.background = 'var(--hover)'}
-            onMouseLeave={e => e.currentTarget.style.background = 'var(--card-bg)'}
-          >
-            Clear History
-          </button>
-        )}
+        <div style={{ display: 'flex', gap: '0.5rem' }}>
+          {isAdmin && queue.length > 0 && (
+            <button 
+              onClick={async () => {
+                if (confirm('Are you sure you want to cancel ALL active downloads and clear the queue?')) {
+                  await fetch('/api/queue?action=kill_all', { method: 'DELETE' });
+                  setQueue([]);
+                }
+              }}
+              style={{
+                padding: '0.6rem 1.2rem', borderRadius: '8px', border: '1px solid rgba(239, 68, 68, 0.3)',
+                background: 'transparent', color: '#ef4444', cursor: 'pointer',
+                fontWeight: 500, fontSize: '0.9rem', transition: 'background 0.2s'
+              }}
+              onMouseEnter={e => e.currentTarget.style.background = 'rgba(239, 68, 68, 0.1)'}
+              onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
+            >
+              Kill All Processes
+            </button>
+          )}
+
+          {queue.some(i => i.status === 'error' || i.status === 'completed') && (
+            <button 
+              onClick={handleClear}
+              style={{
+                padding: '0.6rem 1.2rem', borderRadius: '8px', border: '1px solid var(--border)',
+                background: 'var(--card-bg)', color: 'var(--foreground)', cursor: 'pointer',
+                fontWeight: 500, fontSize: '0.9rem', transition: 'background 0.2s'
+              }}
+              onMouseEnter={e => e.currentTarget.style.background = 'var(--hover)'}
+              onMouseLeave={e => e.currentTarget.style.background = 'var(--card-bg)'}
+            >
+              Clear History
+            </button>
+          )}
+        </div>
       </div>
 
-      {queue.length === 0 ? (
+      {filteredQueue.length === 0 ? (
         <div style={{ padding: '3rem', textAlign: 'center', background: 'var(--card-bg)', borderRadius: '12px' }}>
           <p style={{ color: 'var(--text-muted)' }}>The queue is empty.</p>
         </div>
       ) : (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-          {queue.map(item => (
+          {filteredQueue.map(item => (
             <div key={item.id} className="queue-item">
               <div className="queue-thumb" style={{ position: 'relative', width: '80px', height: '45px', flexShrink: 0 }}>
                 {(() => {
@@ -79,7 +115,14 @@ export default function QueuePage() {
               </div>
               
               <div style={{ flex: 1 }}>
-                <h3 style={{ margin: '0 0 0.5rem 0', fontSize: '1.1rem' }}>{item.title}</h3>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.5rem' }}>
+                  <h3 style={{ margin: 0, fontSize: '1.1rem' }}>{item.title}</h3>
+                  {item.isPrivate && (
+                    <div style={{ background: 'rgba(239, 68, 68, 0.9)', color: 'white', padding: '0.1rem 0.4rem', borderRadius: '4px', display: 'flex', alignItems: 'center', gap: '4px' }} title="Private Download">
+                      <Lock size={12} />
+                    </div>
+                  )}
+                </div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.9rem', color: 'var(--text-muted)' }}>
                   {item.status === 'downloading' && <Loader2 size={14} className="spinner" />}
                   {item.status === 'error' && <AlertCircle size={14} color="#ef4444" />}
