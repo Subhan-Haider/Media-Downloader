@@ -32,10 +32,10 @@ function applyWatermarkPromise(filePath: string, id: string): Promise<void> {
     const opacity = db.settings?.watermarkOpacity !== undefined ? db.settings.watermarkOpacity : 1.0;
     const size = db.settings?.watermarkSize || 120;
 
-    let overlayCoord = 'W-w-20:H-h-20'; // bottom-right
-    if (position === 'bottom-left') overlayCoord = '20:H-h-20';
-    else if (position === 'top-right') overlayCoord = 'W-w-20:20';
-    else if (position === 'top-left') overlayCoord = '20:20';
+    let overlayCoord = 'W-w-(W*0.03):H-h-(H*0.03)'; // bottom-right
+    if (position === 'bottom-left') overlayCoord = '(W*0.03):H-h-(H*0.03)';
+    else if (position === 'top-right') overlayCoord = 'W-w-(W*0.03):(H*0.03)';
+    else if (position === 'top-left') overlayCoord = '(W*0.03):(H*0.03)';
     else if (position === 'center') overlayCoord = '(W-w)/2:(H-h)/2';
 
     updateQueueItem(id, { progress: 'Applying Watermark (this takes time)...' });
@@ -45,7 +45,7 @@ function applyWatermarkPromise(filePath: string, id: string): Promise<void> {
     const watermarkArgs = [
       '-i', filePath,
       '-i', logoPath,
-      '-filter_complex', `[1:v]format=rgba,colorchannelmixer=aa=${opacity},scale=${size}:-1[logo];[0:v][logo]overlay=${overlayCoord}`,
+      '-filter_complex', `[1:v][0:v]scale2ref=w='min(${size},main_w*0.2)':h='ow/a'[logo][main];[logo]format=rgba,colorchannelmixer=aa=${opacity}[logo_alpha];[main][logo_alpha]overlay=${overlayCoord}`,
       ...(isVideo ? ['-c:a', 'copy', '-c:v', 'libx264', '-preset', 'fast'] : ['-frames:v', '1', '-update', '1']),
       '-y',
       watermarkTemp
