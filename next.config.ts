@@ -10,6 +10,12 @@ const nextConfig: NextConfig = {
       },
     ],
   },
+  // Exclude the Python virtual environment from Turbopack file tracing.
+  // On Linux, venv/bin/python is a symlink that points outside the project root,
+  // which causes a Turbopack panic during `next build`.
+  outputFileTracingExcludes: {
+    '*': ['venv/**', 'venv/bin/**'],
+  },
 };
 
 export default nextConfig;
