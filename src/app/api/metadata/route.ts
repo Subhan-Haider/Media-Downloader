@@ -27,8 +27,8 @@ export async function POST(request: Request) {
     }
     
     // Check for explicit cookies files
-    const ytCookiesPath = join(process.cwd(), 'data', 'youtube_cookies.txt');
-    const igCookiesPath = join(process.cwd(), 'data', 'instagram_cookies.txt');
+    const ytCookiesPath = join(/*turbopackIgnore: true*/ process.cwd(), 'data', 'youtube_cookies.txt');
+    const igCookiesPath = join(/*turbopackIgnore: true*/ process.cwd(), 'data', 'instagram_cookies.txt');
     
     if (isYouTube && fs.existsSync(ytCookiesPath)) {
       options.cookies = `"${ytCookiesPath}"`;

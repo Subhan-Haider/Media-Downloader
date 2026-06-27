@@ -345,9 +345,9 @@ async function startDownload(id: string, url: string, type: string, quality: str
   const isInstagram = url.includes('instagram.com');
   const isYouTube = url.includes('youtube.com') || url.includes('youtu.be');
   // Instagram no longer supports --username/--password; use a cookies.txt file instead
-  const cookiesPath = join(process.cwd(), 'data', 'instagram_cookies.txt');
-  const hasCookies = require('fs').existsSync(cookiesPath);
-  const ytCookiesPath = join(process.cwd(), 'data', 'youtube_cookies.txt');
+  const igCookiesPath = join(/*turbopackIgnore: true*/ process.cwd(), 'data', 'instagram_cookies.txt');
+  const hasCookies = require('fs').existsSync(igCookiesPath);
+  const ytCookiesPath = join(/*turbopackIgnore: true*/ process.cwd(), 'data', 'youtube_cookies.txt');
   const hasYtCookies = require('fs').existsSync(ytCookiesPath);
 
   // --- Instagram image post special handling ---
@@ -356,7 +356,7 @@ async function startDownload(id: string, url: string, type: string, quality: str
 
     try {
       const metaOptions: any = { dumpJson: true, noWarnings: true, noCheckCertificates: true };
-      if (hasCookies) metaOptions.cookies = `"${cookiesPath}"`;
+      if (hasCookies) metaOptions.cookies = `"${igCookiesPath}"`;
       else if (browserAuth && browserAuth !== 'none') metaOptions.cookiesFromBrowser = browserAuth;
 
       const info = await youtubedl(url, metaOptions) as any;
@@ -401,8 +401,8 @@ async function startDownload(id: string, url: string, type: string, quality: str
         const shortcode = pathParts[shortcodeIndex];
         
         if (shortcode) {
-          const helperPath = join(process.cwd(), 'instaloader_helper.py');
-          const cmd = hasCookies ? `python "${helperPath}" ${shortcode} "${cookiesPath}"` : `python "${helperPath}" ${shortcode}`;
+          const helperPath = join(/*turbopackIgnore: true*/ process.cwd(), 'instaloader_helper.py');
+          const cmd = hasCookies ? `python "${helperPath}" ${shortcode} "${igCookiesPath}"` : `python "${helperPath}" ${shortcode}`;
           const { stdout } = await execAsync(cmd);
           const result = JSON.parse(stdout);
           if (result.success && result.images && result.images.length > 0) {
@@ -632,7 +632,7 @@ async function startDownload(id: string, url: string, type: string, quality: str
 
   // Inject auth for Instagram (cookies file) or other sites (browser cookies)
   if (isInstagram && hasCookies) {
-    args.push('--cookies', cookiesPath);
+    args.push('--cookies', igCookiesPath);
   } else if (isYouTube && hasYtCookies) {
     args.push('--cookies', ytCookiesPath);
   } else if (browserAuth && browserAuth !== 'none') {

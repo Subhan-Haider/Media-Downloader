@@ -122,7 +122,7 @@ export async function GET(request: Request) {
       const os = require('os');
       const fs = require('fs');
       const platform = os.platform();
-      const ffmpegPath = join(process.cwd(), 'node_modules', 'ffmpeg-static', 'ffmpeg' + (platform === 'win32' ? '.exe' : ''));
+      const ffmpegPath = join(/*turbopackIgnore: true*/ process.cwd(), 'node_modules', 'ffmpeg-static', 'ffmpeg' + (platform === 'win32' ? '.exe' : ''));
 
       const options: any = {
         f: formatString,
