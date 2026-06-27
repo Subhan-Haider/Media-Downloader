@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { adminAuth } from '@/lib/firebaseAdmin';
-import { getAdmins, readDB, writeDB } from '@/lib/db';
+import { readDB, writeDB } from '@/lib/db';
 import { generateSecret, verify, generateURI } from 'otplib';
 import QRCode from 'qrcode';
 
@@ -9,25 +9,29 @@ export async function POST(request: Request) {
     const { idToken, totpCode, authMethod } = await request.json();
 
     if (!idToken) {
-      return NextResponse.json({ error: 'Missing ID token' }, { status: 401 });
+      return NextResponse.json({ error: 'Missing token' }, { status: 400 });
     }
 
     // Verify the ID token and get the decoded claims
     const decodedToken = await adminAuth.verifyIdToken(idToken);
-    const email = decodedToken.email;
-    
-    // Check if the user is in the authorized admin list
-    const admins = getAdmins();
-    if (!email || !admins.some(a => a.email === email)) {
-      // Unauthorize immediately if not admin
-      return NextResponse.json({ error: 'Unauthorized: Only an admin can access this app' }, { status: 403 });
+    const userEmail = decodedToken.email;
+
+    if (!userEmail) {
+      return NextResponse.json({ error: 'No email associated with this account' }, { status: 400 });
     }
 
     const db = readDB();
-    let user = db.users?.find(u => u.email === email);
     
+    // Find if this email owns any space
+    const userSpace = db.accessKeys?.find(k => k.ownerEmail === userEmail);
+
+    if (!userSpace) {
+      return NextResponse.json({ error: 'No private space found for this Google account. You need an invite link from the administrator to claim a space first.' }, { status: 404 });
+    }
+
+    let user = db.users?.find(u => u.email === userEmail);
     if (!user) {
-      user = { email, totpEnabled: false };
+      user = { email: userEmail, totpEnabled: false };
       db.users = db.users || [];
       db.users.push(user);
       writeDB(db);
@@ -41,10 +45,9 @@ export async function POST(request: Request) {
     // If TOTP is NOT enabled and no code provided, generate secret and ask to setup
     if (!user.totpEnabled && !totpCode) {
       const secret = generateSecret();
-      const otpauth = generateURI({ issuer: 'MediaServer', label: email, secret });
+      const otpauth = generateURI({ issuer: 'MediaServer', label: userEmail, secret });
       const qrCode = await QRCode.toDataURL(otpauth);
       
-      // temporarily store secret
       user.totpSecret = secret;
       writeDB(db);
 
@@ -64,7 +67,6 @@ export async function POST(request: Request) {
           return NextResponse.json({ error: 'Invalid email code. Please try again.' }, { status: 400 });
         }
         
-        // Clear the code after successful verification
         delete user.emailOtpCode;
         delete user.emailOtpExpires;
         writeDB(db);
@@ -74,7 +76,6 @@ export async function POST(request: Request) {
           return NextResponse.json({ error: 'Invalid 2FA code. Please try again.' }, { status: 400 });
         }
 
-        // If they were setting it up via Authenticator, mark it as enabled now
         if (!user.totpEnabled) {
           user.totpEnabled = true;
           writeDB(db);
@@ -86,7 +87,7 @@ export async function POST(request: Request) {
     const expiresIn = 60 * 60 * 24 * 5 * 1000;
     const sessionCookie = await adminAuth.createSessionCookie(idToken, { expiresIn });
 
-    const response = NextResponse.json({ success: true }, { status: 200 });
+    const response = NextResponse.json({ success: true, redirectUrl: `/${userSpace.key}` }, { status: 200 });
 
     // Set the cookie
     response.cookies.set('session', sessionCookie, {
@@ -99,7 +100,7 @@ export async function POST(request: Request) {
 
     return response;
   } catch (error: any) {
-    console.error('Session creation error', error);
+    console.error('User login error', error);
     return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
   }
 }

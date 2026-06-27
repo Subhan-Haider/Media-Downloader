@@ -7,9 +7,11 @@ import { randomBytes } from 'crypto';
 import fs from 'fs';
 import os from 'os';
 import { spawn } from 'child_process';
-import { notifyDiscord } from '@/lib/discord';
+import { notifyDiscord, getIp } from '@/lib/discord';
 
 const ffmpegPathGlobal = join(process.cwd(), 'node_modules', 'ffmpeg-static', 'ffmpeg' + (os.platform() === 'win32' ? '.exe' : ''));
+import { cookies } from 'next/headers';
+import { adminAuth } from '@/lib/firebaseAdmin';
 
 function applyWatermarkPromise(filePath: string, id: string): Promise<void> {
   return new Promise((resolve) => {
@@ -26,6 +28,16 @@ function applyWatermarkPromise(filePath: string, id: string): Promise<void> {
     const logoPath = join(process.cwd(), 'public', 'watermark.png');
     if (!fs.existsSync(logoPath) || !fs.existsSync(ffmpegPathGlobal)) return resolve();
 
+    const position = db.settings?.watermarkPosition || 'bottom-right';
+    const opacity = db.settings?.watermarkOpacity !== undefined ? db.settings.watermarkOpacity : 1.0;
+    const size = db.settings?.watermarkSize || 120;
+
+    let overlayCoord = 'W-w-20:H-h-20'; // bottom-right
+    if (position === 'bottom-left') overlayCoord = '20:H-h-20';
+    else if (position === 'top-right') overlayCoord = 'W-w-20:20';
+    else if (position === 'top-left') overlayCoord = '20:20';
+    else if (position === 'center') overlayCoord = '(W-w)/2:(H-h)/2';
+
     updateQueueItem(id, { progress: 'Applying Watermark (this takes time)...' });
     const ext = filePath.split('.').pop();
     const watermarkTemp = filePath.replace(`.${ext}`, `.watermark.${ext}`);
@@ -33,7 +45,7 @@ function applyWatermarkPromise(filePath: string, id: string): Promise<void> {
     const watermarkArgs = [
       '-i', filePath,
       '-i', logoPath,
-      '-filter_complex', '[1:v]scale=120:-1[logo];[0:v][logo]overlay=W-w-20:H-h-20',
+      '-filter_complex', `[1:v]format=rgba,colorchannelmixer=aa=${opacity},scale=${size}:-1[logo];[0:v][logo]overlay=${overlayCoord}`,
       ...(isVideo ? ['-c:a', 'copy', '-c:v', 'libx264', '-preset', 'fast'] : ['-frames:v', '1', '-update', '1']),
       '-y',
       watermarkTemp
@@ -66,10 +78,40 @@ function applyWatermarkPromise(filePath: string, id: string): Promise<void> {
 // Map to track active download subprocesses
 const activeProcesses: Record<string, ReturnType<typeof spawn>> = {};
 
-export async function GET() {
+export async function GET(request: Request) {
   cleanupOldMedia(); // Auto-delete files based on settings
   const db = readDB();
-  return NextResponse.json({ queue: db.queue });
+  
+  const urlObj = new URL(request.url);
+  const accessKey = urlObj.searchParams.get('accessKey');
+  
+  let isAdmin = false;
+  let userEmail: string | null = null;
+  try {
+    const cookieStore = await cookies();
+    const session = cookieStore.get('session')?.value;
+    if (session) {
+      const decodedToken = await adminAuth.verifySessionCookie(session);
+      userEmail = decodedToken.email || null;
+      
+      const admins = getAdmins();
+      if (userEmail && admins.some(a => a.email === userEmail)) {
+        isAdmin = true;
+      }
+    }
+  } catch (e) {}
+
+  let filteredQueue = db.queue;
+  if (!isAdmin && accessKey) {
+    const keyObj = db.accessKeys?.find(k => k.key === accessKey);
+    // Secure it: if claimed, verify the userEmail matches
+    if (keyObj && keyObj.ownerEmail && keyObj.ownerEmail !== userEmail) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 403 });
+    }
+    filteredQueue = db.queue.filter(q => q.ownerKey === accessKey);
+  }
+
+  return NextResponse.json({ queue: filteredQueue });
 }
 
 export async function DELETE(request: Request) {
@@ -116,10 +158,55 @@ export async function DELETE(request: Request) {
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    const { url, type, quality = '1080', embedSubs, browserAuth, isPrivate } = body; // type is 'video' or 'audio'
+    const { url, type, quality = '1080', embedSubs, browserAuth, isPrivate, accessKey } = body; // type is 'video' or 'audio'
 
     if (!url) {
       return NextResponse.json({ error: 'URL is required' }, { status: 400 });
+    }
+
+    const db = readDB();
+    
+    // IP Banning Check
+    const ip = getIp(request);
+    if (db.settings?.bannedIps && db.settings.bannedIps.includes(ip)) {
+      return NextResponse.json({ error: 'Your IP has been banned.' }, { status: 403 });
+    }
+
+    // Access Key Check
+    let isAdmin = false;
+    let userEmail: string | null = null;
+    try {
+      const cookieStore = await cookies();
+      const session = cookieStore.get('session')?.value;
+      if (session) {
+        const decodedToken = await adminAuth.verifySessionCookie(session);
+        userEmail = decodedToken.email || null;
+        const admins = getAdmins();
+        if (userEmail && admins.some(a => a.email === userEmail)) {
+          isAdmin = true;
+        }
+      }
+    } catch (e) {}
+
+    let matchedKey: string | undefined = undefined;
+    if (db.accessKeys && db.accessKeys.length > 0 && !isAdmin) {
+      if (!accessKey) {
+        return NextResponse.json({ error: 'Access key is required' }, { status: 403 });
+      }
+      const keyObj = db.accessKeys.find(k => k.key === accessKey);
+      if (!keyObj) {
+        return NextResponse.json({ error: 'Invalid access key' }, { status: 403 });
+      }
+      
+      // Verify claim
+      if (keyObj.ownerEmail && keyObj.ownerEmail !== userEmail) {
+        return NextResponse.json({ error: 'Unauthorized to use this space' }, { status: 403 });
+      }
+
+      if (keyObj.usedGb >= keyObj.maxGb) {
+        return NextResponse.json({ error: 'Access key limit reached' }, { status: 403 });
+      }
+      matchedKey = accessKey;
     }
 
     const id = randomBytes(8).toString('hex');
@@ -134,7 +221,8 @@ export async function POST(request: Request) {
       filename: `${id}.${containerExt}`,
       status: 'queued' as const,
       addedAt: Date.now(),
-      isPrivate: !!isPrivate
+      isPrivate: !!isPrivate,
+      ownerKey: matchedKey
     };
     
     addToQueue(item);
@@ -161,7 +249,7 @@ export async function POST(request: Request) {
     }
 
     // Kick off background download
-    startDownload(id, url, type, quality, embedSubs, browserAuth).catch(err => {
+    startDownload(id, url, type, quality, embedSubs, browserAuth, matchedKey, isAdmin ? null : db.settings?.maxFileSizeMB).catch(err => {
       console.error('Background download failed:', err);
     });
 
@@ -213,7 +301,7 @@ async function downloadImageUrl(id: string, imageUrl: string, userAgent: string 
   }
 }
 
-async function startDownload(id: string, url: string, type: string, quality: string, embedSubs: boolean, browserAuth?: string) {
+async function startDownload(id: string, url: string, type: string, quality: string, embedSubs: boolean, browserAuth?: string, matchedKey?: string, maxFileSizeMB?: number | null) {
   let isAudio = type === 'audio';
   let isImage = type === 'image';
   let containerExt = isAudio ? 'mp3' : isImage ? 'jpg' : 'mp4';
@@ -547,6 +635,10 @@ async function startDownload(id: string, url: string, type: string, quality: str
     args.push('--cookies-from-browser', browserAuth);
   }
 
+  if (maxFileSizeMB) {
+    args.push('--max-filesize', `${maxFileSizeMB}m`);
+  }
+
   const subprocess = spawn(ytDlpPath, args, {
     detached: true,
     stdio: ['ignore', 'pipe', 'pipe']
@@ -664,6 +756,22 @@ subprocess.stderr.on('data', (data: Buffer) => {
           thumbnail: finalItem?.thumbnail,
           duration: finalItem?.duration,
         }).catch(() => {});
+
+        // 🔔 Update access key usedGb
+        if (matchedKey) {
+          try {
+            const currentDb = readDB();
+            if (currentDb.accessKeys) {
+              const k = currentDb.accessKeys.find(x => x.key === matchedKey);
+              if (k) {
+                const stat = fs.statSync(filePath);
+                k.usedGb += stat.size / (1024 * 1024 * 1024);
+                const { writeDB } = require('@/lib/db');
+                writeDB(currentDb);
+              }
+            }
+          } catch(e) {}
+        }
       };
 
       // Verify the file was actually downloaded
@@ -680,6 +788,9 @@ subprocess.stderr.on('data', (data: Buffer) => {
         let finalError = lastError || 'File was not downloaded. The post might be private, require login, or contain no media.';
         if (finalError.includes('Sign in to confirm your age')) {
           finalError = 'Age-restricted video. Please paste your YouTube cookies in the Settings page to authenticate.';
+        }
+        if (finalError.includes('File is larger than max-filesize')) {
+          finalError = `File exceeds the maximum allowed size of ${maxFileSizeMB} MB for regular users.`;
         }
         if (!fs.existsSync(finalMp4) && !fs.existsSync(finalMp3)) {
            updateQueueItem(id, { status: 'error', error: finalError });

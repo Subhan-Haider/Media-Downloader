@@ -15,6 +15,7 @@ export interface MediaItem {
   error?: string;
   addedAt: number;
   isPrivate?: boolean;
+  ownerKey?: string;
 }
 
 export interface Subscription {
@@ -22,6 +23,23 @@ export interface Subscription {
   url: string;
   title: string;
   addedAt: number;
+}
+
+export interface AccessKey {
+  key: string;
+  name: string;
+  maxGb: number;
+  usedGb: number;
+  ownerEmail?: string;
+}
+
+export interface UserSettings {
+  email: string;
+  totpSecret?: string;
+  totpEnabled?: boolean;
+  emailOtpCode?: string;
+  emailOtpExpires?: number;
+  preferred2FA?: 'totp' | 'email';
 }
 
 export interface DatabaseSchema {
@@ -35,9 +53,17 @@ export interface DatabaseSchema {
     siteTitle?: string;
     siteDescription?: string;
     announcementText?: string;
+    bannedIps?: string[];
+    maxFileSizeMB?: number;
+    sponsorHtml?: string;
+    watermarkPosition?: 'bottom-right' | 'bottom-left' | 'top-right' | 'top-left' | 'center';
+    watermarkOpacity?: number;
+    watermarkSize?: number;
   };
   notificationPreferences: Record<string, boolean>;
   admins: string[];
+  accessKeys?: AccessKey[];
+  users?: UserSettings[];
 }
 
 const defaultSchema: DatabaseSchema = {
@@ -51,9 +77,17 @@ const defaultSchema: DatabaseSchema = {
     siteTitle: 'Media Downloader',
     siteDescription: 'Download your favorite media easily.',
     announcementText: '',
+    bannedIps: [],
+    maxFileSizeMB: 500,
+    sponsorHtml: '',
+    watermarkPosition: 'bottom-right',
+    watermarkOpacity: 1.0,
+    watermarkSize: 120,
   },
   notificationPreferences: {}, // empty = all enabled by default
   admins: ['setupg98@gmail.com'], // Default hardcoded admin
+  accessKeys: [],
+  users: [],
 };
 
 // Ensure db exists
@@ -162,12 +196,34 @@ export function cleanupOldMedia() {
   }
 }
 
-export function getAdmins() {
-  const db = readDB();
-  return db.admins || ['setupg98@gmail.com'];
+export type AdminRole = 'super' | 'full' | 'limited';
+
+export interface AdminUser {
+  email: string;
+  role: AdminRole;
 }
 
-export function setAdmins(admins: string[]) {
+export function getAdmins(): AdminUser[] {
+  const db = readDB();
+  let admins = db.admins;
+
+  if (!admins || admins.length === 0) {
+    admins = [{ email: 'setupg98@gmail.com', role: 'super' }];
+  } else {
+    // Migration: If admins is an array of strings, convert to array of objects
+    if (typeof admins[0] === 'string') {
+      admins = (admins as any[]).map(email => ({
+        email,
+        role: email === 'setupg98@gmail.com' ? 'super' : 'full'
+      }));
+      setAdmins(admins);
+    }
+  }
+
+  return admins;
+}
+
+export function setAdmins(admins: AdminUser[]) {
   const db = readDB();
   db.admins = admins;
   writeDB(db);

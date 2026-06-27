@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { Download, Music, Loader2, Zap, HardDrive, Globe, ShieldCheck, UserX, CloudOff, Image as ImageIcon } from 'lucide-react';
+import Link from 'next/link';
 import { blogs } from '../data/blogs';
 import styles from './page.module.css';
 
@@ -15,17 +16,36 @@ export default function Home() {
   const [loading, setLoading] = useState<'video' | 'audio' | 'image' | null>(null);
   const [isAdmin, setIsAdmin] = useState(false);
   const [isPrivate, setIsPrivate] = useState(false);
+  const [accessKeysRequired, setAccessKeysRequired] = useState(false);
+  const [accessKey, setAccessKey] = useState('');
+  const [isUnlocked, setIsUnlocked] = useState(false);
+  const [sponsorHtml, setSponsorHtml] = useState<string | null>(null);
   const router = useRouter();
 
   useEffect(() => {
-    const fetchAuth = async () => {
+    const fetchAuthAndSettings = async () => {
       try {
-        const res = await fetch('/api/auth/me');
-        const data = await res.json();
-        setIsAdmin(data.isAdmin);
+        const [authRes, settingsRes] = await Promise.all([
+          fetch('/api/auth/me'),
+          fetch('/api/settings')
+        ]);
+        const authData = await authRes.json();
+        const settingsData = await settingsRes.json();
+        
+        setIsAdmin(authData.isAdmin);
+        setAccessKeysRequired(settingsData.accessKeysRequired);
+        if (settingsData.settings?.sponsorHtml && !authData.isAdmin) {
+          setSponsorHtml(settingsData.settings.sponsorHtml);
+        }
+        
+        // If we have an access key saved in local storage, use it
+        const savedKey = localStorage.getItem('accessKey');
+        if (savedKey && settingsData.accessKeysRequired && !authData.isAdmin) {
+          router.push('/' + savedKey);
+        }
       } catch (e) {}
     };
-    fetchAuth();
+    fetchAuthAndSettings();
   }, []);
 
   // Fetch metadata for the first URL only to keep UI clean
@@ -73,11 +93,19 @@ export default function Home() {
     setLoading(type);
     try {
       for (const url of validUrls) {
-        await fetch('/api/queue', {
+        const res = await fetch('/api/queue', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ url, type, quality, embedSubs: true, isPrivate }),
+          body: JSON.stringify({ url, type, quality, embedSubs: true, isPrivate, accessKey }),
         });
+        const data = await res.json();
+        if (!res.ok) {
+          if (data.error === 'Invalid access key' || data.error === 'Access key limit reached') {
+            setIsUnlocked(false);
+            localStorage.removeItem('accessKey');
+          }
+          throw new Error(data.error || 'Failed to queue');
+        }
       }
       router.push('/queue');
     } catch (e: any) {
@@ -91,6 +119,25 @@ export default function Home() {
     const newUrls = [...urls];
     newUrls[index] = value;
     setUrls(newUrls);
+  };
+
+  const handleUnlock = async () => {
+    try {
+      const res = await fetch('/api/access-key', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ key: accessKey })
+      });
+      const data = await res.json();
+      if (res.ok && data.valid) {
+        localStorage.setItem('accessKey', accessKey);
+        router.push('/' + accessKey);
+      } else {
+        alert(data.error || 'Invalid key');
+      }
+    } catch (e) {
+      alert('Failed to validate key');
+    }
   };
 
   return (
@@ -109,7 +156,39 @@ export default function Home() {
         </p>
       </div>
 
-      <div className="glass-panel" style={{ width: '100%', maxWidth: '800px', padding: '3rem', display: 'flex', flexDirection: 'column', gap: '1.5rem', position: 'relative' }}>
+      {sponsorHtml && !isAdmin && (
+        <div style={{ width: '100%', maxWidth: '800px', marginBottom: '2rem', display: 'flex', justifyContent: 'center' }} dangerouslySetInnerHTML={{ __html: sponsorHtml }} />
+      )}
+
+      {accessKeysRequired && !isAdmin && !isUnlocked ? (
+        <div className="glass-panel" style={{ width: '100%', maxWidth: '500px', padding: '3rem', display: 'flex', flexDirection: 'column', gap: '1.5rem', textAlign: 'center' }}>
+          <ShieldCheck size={48} color="var(--primary)" style={{ margin: '0 auto' }} />
+          <h2 style={{ margin: 0, fontSize: '1.5rem' }}>Private Server</h2>
+          <p style={{ color: 'var(--text-muted)', margin: 0 }}>This downloader is currently locked. Enter an access key to continue.</p>
+          <div style={{ display: 'flex', gap: '1rem', marginTop: '1rem' }}>
+            <input 
+              type="password" 
+              placeholder="Enter Access Key"
+              value={accessKey}
+              onChange={e => setAccessKey(e.target.value)}
+              onKeyDown={e => e.key === 'Enter' && handleUnlock()}
+              style={{ flex: 1, padding: '1rem', borderRadius: '12px', border: '1px solid var(--border)', background: 'rgba(0,0,0,0.05)', fontSize: '1.1rem' }}
+            />
+            <button 
+              onClick={handleUnlock}
+              style={{ padding: '0 1.5rem', background: 'var(--primary)', color: 'white', border: 'none', borderRadius: '12px', fontWeight: 600, cursor: 'pointer' }}
+            >
+              Unlock
+            </button>
+          </div>
+          <div style={{ marginTop: '1rem', paddingTop: '1.5rem', borderTop: '1px solid var(--border)', display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+            <p style={{ color: 'var(--text-muted)', fontSize: '0.95rem', margin: 0 }}>Already claimed a space?</p>
+            <Link href="/private" style={{ color: 'var(--primary)', fontWeight: 600, textDecoration: 'none' }}>Log In to Private Portal</Link>
+          </div>
+        </div>
+      ) : (
+        <div className="glass-panel" style={{ width: '100%', maxWidth: '800px', padding: '3rem', display: 'flex', flexDirection: 'column', gap: '1.5rem', position: 'relative' }}>
+
         
         <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
           {urls.map((url, i) => (
@@ -315,6 +394,7 @@ export default function Home() {
         </div>
 
       </div>
+      )}
 
       <div style={{ marginTop: '5rem', width: '100%', maxWidth: '1000px', display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '2rem', padding: '0 1rem' }}>
         <div className="glass-panel" style={{ padding: '3rem 2rem', borderRadius: '24px', display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center' }} onMouseEnter={e => e.currentTarget.style.transform = 'translateY(-8px)'} onMouseLeave={e => e.currentTarget.style.transform = 'translateY(0)'}>

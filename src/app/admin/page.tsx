@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { ShieldAlert, Server, HardDrive, Cpu, Activity, Settings, RefreshCw, Terminal, Trash2, X, Users, UserPlus, UserMinus, Palette } from 'lucide-react';
+import { ShieldAlert, Server, HardDrive, Cpu, Activity, Settings, RefreshCw, Terminal, Trash2, X, Users, UserPlus, UserMinus, Palette, Edit2, Check } from 'lucide-react';
 
 export default function AdminDashboard() {
   const [stats, setStats] = useState<any>(null);
@@ -14,9 +14,19 @@ export default function AdminDashboard() {
   const [isScanning, setIsScanning] = useState(false);
   const [logs, setLogs] = useState<any[]>([]);
   const [showLogs, setShowLogs] = useState(false);
-  const [admins, setAdmins] = useState<string[]>([]);
+  const [admins, setAdmins] = useState<{email: string, role: string}[]>([]);
   const [newAdminEmail, setNewAdminEmail] = useState('');
+  const [newAdminRole, setNewAdminRole] = useState('limited');
   const [isSuperAdmin, setIsSuperAdmin] = useState(false);
+  const [userRole, setUserRole] = useState<string | null>(null);
+
+  // Access Keys
+  const [accessKeys, setAccessKeys] = useState<any[]>([]);
+  const [newKeyName, setNewKeyName] = useState('');
+  const [newKeyMaxGb, setNewKeyMaxGb] = useState(5);
+  const [editingKey, setEditingKey] = useState<string | null>(null);
+  const [editKeyName, setEditKeyName] = useState('');
+  const [editKeyMaxGb, setEditKeyMaxGb] = useState(5);
 
   // Branding State
   const [themeColor, setThemeColor] = useState('#0070f3');
@@ -30,6 +40,7 @@ export default function AdminDashboard() {
     fetchAdmins();
     fetchAuth();
     fetchSettings();
+    fetchKeys();
     // Poll every 5 seconds
     const interval = setInterval(fetchStats, 5000);
     return () => clearInterval(interval);
@@ -109,6 +120,15 @@ export default function AdminDashboard() {
       const res = await fetch('/api/auth/me');
       const data = await res.json();
       setIsSuperAdmin(data.isSuperAdmin);
+      setUserRole(data.role);
+    } catch (e) {}
+  };
+
+  const fetchKeys = async () => {
+    try {
+      const res = await fetch('/api/admin/keys');
+      const data = await res.json();
+      setAccessKeys(data.keys || []);
     } catch (e) {}
   };
 
@@ -140,13 +160,13 @@ export default function AdminDashboard() {
     setSavingBrand(false);
   };
 
-  const handleAdminAction = async (action: 'add' | 'remove', email: string) => {
+  const handleAdminAction = async (action: 'add' | 'remove', email: string, role?: string) => {
     if (action === 'remove' && !confirm(`Are you sure you want to remove ${email} from admins?`)) return;
     try {
       const res = await fetch('/api/admin/whitelist', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action, email })
+        body: JSON.stringify({ action, email, role })
       });
       const data = await res.json();
       if (data.error) alert(data.error);
@@ -154,6 +174,27 @@ export default function AdminDashboard() {
       setNewAdminEmail('');
     } catch (e) {
       alert('Failed to update admins');
+    }
+  };
+
+  const handleKeyAction = async (action: 'create' | 'delete' | 'update', keyId?: string, updateData?: any) => {
+    try {
+      let keyData = updateData;
+      if (action === 'create') {
+        const randomKey = Math.random().toString(36).slice(-8);
+        keyData = { key: randomKey, name: newKeyName, maxGb: newKeyMaxGb, usedGb: 0 };
+      }
+      const res = await fetch('/api/admin/keys', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action, keyId, keyData })
+      });
+      const data = await res.json();
+      if (data.keys) setAccessKeys(data.keys);
+      if (action === 'create') setNewKeyName('');
+      if (action === 'update') setEditingKey(null);
+    } catch (e) {
+      alert('Failed to manage key');
     }
   };
 
@@ -273,23 +314,25 @@ export default function AdminDashboard() {
         </div>
       </div>
 
-      <div className="glass-panel" style={{ padding: '1.5rem', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-        <div>
-          <h3 style={{ margin: '0 0 8px 0' }}>Configuration</h3>
-          <p style={{ margin: 0, color: 'var(--text-secondary)' }}>Manage your YouTube cookies, Discord webhook, and queue settings.</p>
-        </div>
-        <Link href="/settings" style={{
-          display: 'flex', alignItems: 'center', gap: '8px', padding: '10px 20px', 
-          background: 'var(--primary)', color: '#fff', borderRadius: '8px', textDecoration: 'none', fontWeight: 500
-        }}>
-          <Settings size={18} />
-          Go to Settings
-        </Link>
-      </div>
+      {(userRole === 'super' || userRole === 'full') && (
+        <>
+          <div className="glass-panel" style={{ padding: '1.5rem', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+            <div>
+              <h3 style={{ margin: '0 0 8px 0' }}>Configuration</h3>
+              <p style={{ margin: 0, color: 'var(--text-secondary)' }}>Manage your YouTube cookies, Discord webhook, and queue settings.</p>
+            </div>
+            <Link href="/settings" style={{
+              display: 'flex', alignItems: 'center', gap: '8px', padding: '10px 20px', 
+              background: 'var(--primary)', color: '#fff', borderRadius: '8px', textDecoration: 'none', fontWeight: 500
+            }}>
+              <Settings size={18} />
+              Go to Settings
+            </Link>
+          </div>
 
-      <div style={{ marginTop: '2rem' }}>
-        <h2 style={{ fontSize: '1.5rem', marginBottom: '1rem' }}>Branding & Communication</h2>
-        <div className="glass-panel" style={{ padding: '1.5rem', borderRadius: '12px', marginBottom: '2rem' }}>
+          <div style={{ marginTop: '2rem' }}>
+            <h2 style={{ fontSize: '1.5rem', marginBottom: '1rem' }}>Branding & Communication</h2>
+            <div className="glass-panel" style={{ padding: '1.5rem', borderRadius: '12px', marginBottom: '2rem' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '1rem', color: 'var(--text-secondary)' }}>
             <Palette size={20} />
             <h3 style={{ margin: 0 }}>Global Brand Settings</h3>
@@ -302,7 +345,7 @@ export default function AdminDashboard() {
                 type="text" 
                 value={siteTitle}
                 onChange={e => setSiteTitle(e.target.value)}
-                style={{ padding: '0.7rem 1rem', borderRadius: '8px', border: '1px solid var(--border)', background: 'rgba(0,0,0,0.2)', color: 'var(--foreground)' }}
+                style={{ padding: '0.7rem 1rem', borderRadius: '8px', border: '1px solid var(--border)', background: '#ffffff', color: '#111' }}
               />
             </div>
 
@@ -312,7 +355,7 @@ export default function AdminDashboard() {
                 type="text" 
                 value={siteDescription}
                 onChange={e => setSiteDescription(e.target.value)}
-                style={{ padding: '0.7rem 1rem', borderRadius: '8px', border: '1px solid var(--border)', background: 'rgba(0,0,0,0.2)', color: 'var(--foreground)' }}
+                style={{ padding: '0.7rem 1rem', borderRadius: '8px', border: '1px solid var(--border)', background: '#ffffff', color: '#111' }}
               />
             </div>
 
@@ -329,7 +372,7 @@ export default function AdminDashboard() {
                   type="text" 
                   value={themeColor}
                   onChange={e => setThemeColor(e.target.value)}
-                  style={{ flex: 1, padding: '0.7rem 1rem', borderRadius: '8px', border: '1px solid var(--border)', background: 'rgba(0,0,0,0.2)', color: 'var(--foreground)' }}
+                  style={{ flex: 1, padding: '0.7rem 1rem', borderRadius: '8px', border: '1px solid var(--border)', background: '#ffffff', color: '#111' }}
                 />
               </div>
             </div>
@@ -341,7 +384,7 @@ export default function AdminDashboard() {
                 value={announcementText}
                 onChange={e => setAnnouncementText(e.target.value)}
                 placeholder="E.g. Server maintenance tonight! (Leave blank to hide banner)"
-                style={{ padding: '0.7rem 1rem', borderRadius: '8px', border: '1px solid var(--border)', background: 'rgba(0,0,0,0.2)', color: 'var(--foreground)' }}
+                style={{ padding: '0.7rem 1rem', borderRadius: '8px', border: '1px solid var(--border)', background: '#ffffff', color: '#111' }}
               />
             </div>
 
@@ -351,10 +394,137 @@ export default function AdminDashboard() {
             disabled={savingBrand}
             style={{ marginTop: '1.5rem', padding: '0.7rem 1.5rem', borderRadius: '8px', border: 'none', background: 'var(--primary)', color: 'white', cursor: 'pointer', fontWeight: 500 }}
           >
-            {savingBrand ? 'Saving...' : 'Save Branding'}
+            {savingBrand ? 'Saving...' : 'Save Settings'}
           </button>
         </div>
+
+        {/* Access Keys (Visible to all admins) */}
+        <div style={{ marginTop: '2rem' }}>
+          <h2 style={{ fontSize: '1.5rem', marginBottom: '1rem' }}>Access Keys & Limits</h2>
+          <div className="glass-panel" style={{ padding: '1.5rem', borderRadius: '12px', marginBottom: '2rem' }}>
+            <p style={{ margin: '0 0 1.5rem 0', color: 'var(--text-secondary)', fontSize: '0.9rem' }}>
+              If you generate Access Keys, regular users MUST enter a key to download media. Admins bypass this.
+            </p>
+            
+            <div style={{ display: 'flex', gap: '1rem', marginBottom: '1.5rem' }}>
+              <input 
+                type="text" 
+                placeholder="Friend's Name" 
+                value={newKeyName}
+                onChange={e => setNewKeyName(e.target.value)}
+                style={{ flex: 1, padding: '0.7rem 1rem', borderRadius: '8px', border: '1px solid var(--border)', background: '#ffffff', color: '#111' }}
+              />
+              <input 
+                type="number" 
+                placeholder="Max GB" 
+                value={newKeyMaxGb}
+                onChange={e => setNewKeyMaxGb(Number(e.target.value))}
+                style={{ width: '100px', padding: '0.7rem 1rem', borderRadius: '8px', border: '1px solid var(--border)', background: '#ffffff', color: '#111' }}
+              />
+              <button 
+                onClick={() => handleKeyAction('create')}
+                disabled={!newKeyName}
+                style={{ padding: '0.7rem 1.5rem', borderRadius: '8px', border: 'none', background: 'var(--primary)', color: 'white', cursor: 'pointer', fontWeight: 500 }}
+              >
+                Generate Key
+              </button>
+            </div>
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+              {accessKeys.map(k => {
+                const isEditing = editingKey === k.key;
+                return (
+                  <div key={k.key} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '1rem', background: '#ffffff', borderRadius: '8px', border: '1px solid var(--border)' }}>
+                    {isEditing ? (
+                      <div style={{ display: 'flex', gap: '0.5rem', flex: 1, alignItems: 'center' }}>
+                        <input 
+                          type="text" 
+                          value={editKeyName}
+                          onChange={e => setEditKeyName(e.target.value)}
+                          style={{ flex: 1, padding: '0.4rem 0.8rem', borderRadius: '4px', border: '1px solid var(--border)', fontSize: '0.9rem', background: 'transparent', color: '#111' }}
+                        />
+                        <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', fontFamily: 'monospace', background: 'rgba(0,0,0,0.08)', padding: '2px 6px', borderRadius: '4px', marginRight: '0.5rem' }}>
+                          Key: {k.key}
+                        </div>
+                      </div>
+                    ) : (
+                      <div>
+                        <div style={{ fontWeight: 600, marginBottom: '4px' }}>{k.name}</div>
+                        <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', fontFamily: 'monospace', background: 'rgba(0,0,0,0.08)', padding: '2px 6px', borderRadius: '4px' }}>
+                          Key: {k.key}
+                        </div>
+                      </div>
+                    )}
+                    
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '1.5rem', marginLeft: '1rem' }}>
+                      {isEditing ? (
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                          <span style={{ fontSize: '0.9rem', color: 'var(--text-secondary)' }}>Limit (GB):</span>
+                          <input 
+                            type="number" 
+                            value={editKeyMaxGb}
+                            onChange={e => setEditKeyMaxGb(Number(e.target.value))}
+                            style={{ width: '70px', padding: '0.4rem 0.8rem', borderRadius: '4px', border: '1px solid var(--border)', fontSize: '0.9rem', background: 'transparent', color: '#111' }}
+                          />
+                        </div>
+                      ) : (
+                        <div style={{ fontSize: '0.9rem' }}>
+                          <span style={{ color: k.usedGb >= k.maxGb ? '#ef4444' : 'var(--text-primary)' }}>{k.usedGb.toFixed(2)} GB</span> / {k.maxGb} GB
+                        </div>
+                      )}
+
+                      <div style={{ display: 'flex', gap: '0.5rem' }}>
+                        {isEditing ? (
+                          <>
+                            <button 
+                              onClick={() => handleKeyAction('update', k.key, { name: editKeyName, maxGb: editKeyMaxGb })}
+                              style={{ background: 'transparent', border: 'none', color: '#10b981', cursor: 'pointer', padding: '4px' }}
+                              title="Save"
+                            >
+                              <Check size={18} />
+                            </button>
+                            <button 
+                              onClick={() => setEditingKey(null)}
+                              style={{ background: 'transparent', border: 'none', color: '#6b7280', cursor: 'pointer', padding: '4px' }}
+                              title="Cancel"
+                            >
+                              <X size={18} />
+                            </button>
+                          </>
+                        ) : (
+                          <>
+                            <button 
+                              onClick={() => {
+                                setEditingKey(k.key);
+                                setEditKeyName(k.name);
+                                setEditKeyMaxGb(k.maxGb);
+                              }}
+                              style={{ background: 'transparent', border: 'none', color: 'var(--primary)', cursor: 'pointer', padding: '4px' }}
+                              title="Edit"
+                            >
+                              <Edit2 size={18} />
+                            </button>
+                            <button 
+                              onClick={() => handleKeyAction('delete', k.key)}
+                              style={{ background: 'transparent', border: 'none', color: '#ef4444', cursor: 'pointer', padding: '4px' }}
+                              title="Delete"
+                            >
+                              <Trash2 size={18} />
+                            </button>
+                          </>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+              {accessKeys.length === 0 && <div style={{ color: 'var(--text-secondary)', fontSize: '0.9rem' }}>No keys active. Public access is currently open to everyone.</div>}
+            </div>
+          </div>
+        </div>
       </div>
+      </>
+      )}
 
       <div style={{ marginTop: '2rem' }}>
         <h2 style={{ fontSize: '1.5rem', marginBottom: '1rem' }}>Admin Tools</h2>
@@ -372,13 +542,13 @@ export default function AdminDashboard() {
             <button
               onClick={handleScan}
               disabled={isScanning}
-              style={{ padding: '0.6rem 1.2rem', borderRadius: '8px', border: 'none', background: 'var(--hover)', color: 'var(--foreground)', cursor: 'pointer', fontWeight: 500, width: '100%', display: 'flex', justifyContent: 'center', gap: '0.5rem' }}
+              style={{ padding: '0.6rem 1.2rem', borderRadius: '8px', border: 'none', background: 'var(--hover)', color: '#111', cursor: 'pointer', fontWeight: 500, width: '100%', display: 'flex', justifyContent: 'center', gap: '0.5rem' }}
             >
               {isScanning ? 'Scanning...' : 'Run Integrity Scan'}
             </button>
 
             {scanResult && (
-              <div style={{ marginTop: '1rem', padding: '1rem', background: 'rgba(0,0,0,0.2)', borderRadius: '8px' }}>
+              <div style={{ marginTop: '1rem', padding: '1rem', background: '#ffffff', borderRadius: '8px' }}>
                 <div style={{ marginBottom: '1rem' }}>
                   <strong>Orphaned Files: {scanResult.orphanedFiles.length}</strong>
                   {scanResult.orphanedFiles.length > 0 && (
@@ -433,10 +603,18 @@ export default function AdminDashboard() {
                 placeholder="user@gmail.com" 
                 value={newAdminEmail}
                 onChange={e => setNewAdminEmail(e.target.value)}
-                style={{ flex: 1, padding: '0.7rem 1rem', borderRadius: '8px', border: '1px solid var(--border)', background: 'rgba(0,0,0,0.2)', color: 'var(--foreground)' }}
+                style={{ flex: 1, padding: '0.7rem 1rem', borderRadius: '8px', border: '1px solid var(--border)', background: '#ffffff', color: '#111' }}
               />
+              <select 
+                value={newAdminRole}
+                onChange={e => setNewAdminRole(e.target.value)}
+                style={{ padding: '0.7rem 1rem', borderRadius: '8px', border: '1px solid var(--border)', background: '#ffffff', color: '#111' }}
+              >
+                <option value="full">Full Admin</option>
+                <option value="limited">Limited Admin</option>
+              </select>
               <button 
-                onClick={() => handleAdminAction('add', newAdminEmail)}
+                onClick={() => handleAdminAction('add', newAdminEmail, newAdminRole)}
                 disabled={!newAdminEmail.includes('@')}
                 style={{ padding: '0.7rem 1.5rem', borderRadius: '8px', border: 'none', background: 'var(--primary)', color: 'white', cursor: 'pointer', fontWeight: 500, display: 'flex', alignItems: 'center', gap: '8px' }}
               >
@@ -446,12 +624,17 @@ export default function AdminDashboard() {
             </div>
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-              {admins.map(email => (
-                <div key={email} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0.8rem 1rem', background: 'rgba(0,0,0,0.2)', borderRadius: '8px', border: '1px solid var(--border)' }}>
-                  <span style={{ fontWeight: 500 }}>{email} {email === 'setupg98@gmail.com' && <span style={{ color: 'var(--primary)', fontSize: '0.8rem', marginLeft: '8px', fontWeight: 700 }}>(SUPER ADMIN)</span>}</span>
-                  {email !== 'setupg98@gmail.com' && (
+              {admins.map(admin => (
+                <div key={admin.email} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0.8rem 1rem', background: '#ffffff', borderRadius: '8px', border: '1px solid var(--border)' }}>
+                  <span style={{ fontWeight: 500 }}>
+                    {admin.email} 
+                    {admin.role === 'super' && <span style={{ color: 'var(--primary)', fontSize: '0.8rem', marginLeft: '8px', fontWeight: 700 }}>(SUPER ADMIN)</span>}
+                    {admin.role === 'full' && <span style={{ color: '#10b981', fontSize: '0.8rem', marginLeft: '8px', fontWeight: 700 }}>(FULL ADMIN)</span>}
+                    {admin.role === 'limited' && <span style={{ color: '#f59e0b', fontSize: '0.8rem', marginLeft: '8px', fontWeight: 700 }}>(LIMITED ADMIN)</span>}
+                  </span>
+                  {admin.role !== 'super' && (
                     <button 
-                      onClick={() => handleAdminAction('remove', email)}
+                      onClick={() => handleAdminAction('remove', admin.email)}
                       title="Remove Admin"
                       style={{ background: 'transparent', border: 'none', color: '#ef4444', cursor: 'pointer', display: 'flex', alignItems: 'center' }}
                     >

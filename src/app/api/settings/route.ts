@@ -1,14 +1,31 @@
 import { NextResponse } from 'next/server';
-import { readDB, writeDB } from '@/lib/db';
+import { getAdmins, readDB, writeDB } from '@/lib/db';
 import { notifyDiscord } from '@/lib/discord';
+import { cookies } from 'next/headers';
+import { adminAuth } from '@/lib/firebaseAdmin';
 
 export async function GET() {
   const db = readDB();
-  return NextResponse.json({ settings: db.settings || { autoDeleteDays: 2, enableWatermark: true } });
+  return NextResponse.json({ 
+    settings: db.settings || { autoDeleteDays: 2, enableWatermark: true },
+    accessKeysRequired: db.accessKeys && db.accessKeys.length > 0
+  });
 }
 
 export async function POST(req: Request) {
   try {
+    const cookieStore = await cookies();
+    const session = cookieStore.get('session')?.value;
+    if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+
+    const decodedToken = await adminAuth.verifySessionCookie(session);
+    const admins = getAdmins();
+    const callerRole = admins.find(a => a.email === decodedToken.email)?.role;
+
+    if (callerRole !== 'super' && callerRole !== 'full') {
+      return NextResponse.json({ error: 'Forbidden: You do not have permission to change settings' }, { status: 403 });
+    }
+
     const { settings } = await req.json();
     const db = readDB();
     
@@ -50,6 +67,14 @@ export async function POST(req: Request) {
     if (settings?.siteTitle !== undefined) db.settings.siteTitle = settings.siteTitle;
     if (settings?.siteDescription !== undefined) db.settings.siteDescription = settings.siteDescription;
     if (settings?.announcementText !== undefined) db.settings.announcementText = settings.announcementText;
+    
+    if (settings?.bannedIps !== undefined) db.settings.bannedIps = settings.bannedIps;
+    if (settings?.maxFileSizeMB !== undefined) db.settings.maxFileSizeMB = settings.maxFileSizeMB;
+    if (settings?.sponsorHtml !== undefined) db.settings.sponsorHtml = settings.sponsorHtml;
+
+    if (settings?.watermarkPosition !== undefined) db.settings.watermarkPosition = settings.watermarkPosition;
+    if (settings?.watermarkOpacity !== undefined) db.settings.watermarkOpacity = settings.watermarkOpacity;
+    if (settings?.watermarkSize !== undefined) db.settings.watermarkSize = settings.watermarkSize;
     
     writeDB(db);
     return NextResponse.json({ success: true, settings: db.settings });

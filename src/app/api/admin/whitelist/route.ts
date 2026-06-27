@@ -15,16 +15,18 @@ export async function POST(request: Request) {
     if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
     const decodedToken = await adminAuth.verifySessionCookie(session);
-    if (decodedToken.email !== 'setupg98@gmail.com') {
-      return NextResponse.json({ error: 'Forbidden: Only the Super Admin can modify the whitelist' }, { status: 403 });
+    const admins = getAdmins();
+    const callerRole = admins.find(a => a.email === decodedToken.email)?.role;
+    
+    if (callerRole !== 'super' && callerRole !== 'full') {
+      return NextResponse.json({ error: 'Forbidden: Only Super or Full Admins can modify the whitelist' }, { status: 403 });
     }
 
-    const { action, email } = await request.json();
-    const admins = getAdmins();
+    const { action, email, role = 'limited' } = await request.json();
 
     if (action === 'add') {
-      if (email && !admins.includes(email)) {
-        admins.push(email.toLowerCase());
+      if (email && !admins.some(a => a.email === email)) {
+        admins.push({ email: email.toLowerCase(), role });
         setAdmins(admins);
       }
     } else if (action === 'remove') {
@@ -32,7 +34,7 @@ export async function POST(request: Request) {
         return NextResponse.json({ error: 'Cannot remove the Super Admin' }, { status: 400 });
       }
       
-      const newAdmins = admins.filter(e => e !== email);
+      const newAdmins = admins.filter(a => a.email !== email);
       setAdmins(newAdmins);
     }
 

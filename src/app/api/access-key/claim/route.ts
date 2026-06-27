@@ -1,33 +1,42 @@
 import { NextResponse } from 'next/server';
 import { adminAuth } from '@/lib/firebaseAdmin';
-import { getAdmins, readDB, writeDB } from '@/lib/db';
+import { readDB, writeDB } from '@/lib/db';
 import { generateSecret, verify, generateURI } from 'otplib';
 import QRCode from 'qrcode';
 
 export async function POST(request: Request) {
   try {
-    const { idToken, totpCode, authMethod } = await request.json();
+    const { idToken, accessKey, totpCode, authMethod } = await request.json();
 
-    if (!idToken) {
-      return NextResponse.json({ error: 'Missing ID token' }, { status: 401 });
+    if (!idToken || !accessKey) {
+      return NextResponse.json({ error: 'Missing token or key' }, { status: 400 });
     }
 
     // Verify the ID token and get the decoded claims
     const decodedToken = await adminAuth.verifyIdToken(idToken);
-    const email = decodedToken.email;
-    
-    // Check if the user is in the authorized admin list
-    const admins = getAdmins();
-    if (!email || !admins.some(a => a.email === email)) {
-      // Unauthorize immediately if not admin
-      return NextResponse.json({ error: 'Unauthorized: Only an admin can access this app' }, { status: 403 });
+    const userEmail = decodedToken.email;
+
+    if (!userEmail) {
+      return NextResponse.json({ error: 'No email associated with this account' }, { status: 400 });
     }
 
     const db = readDB();
-    let user = db.users?.find(u => u.email === email);
-    
+    const keyIndex = db.accessKeys?.findIndex(k => k.key === accessKey);
+
+    if (keyIndex === undefined || keyIndex === -1 || !db.accessKeys) {
+      return NextResponse.json({ error: 'Invalid access key' }, { status: 404 });
+    }
+
+    const keyObj = db.accessKeys[keyIndex];
+
+    // If key is already claimed by someone else
+    if (keyObj.ownerEmail && keyObj.ownerEmail !== userEmail) {
+      return NextResponse.json({ error: 'This space is already claimed by another account' }, { status: 403 });
+    }
+
+    let user = db.users?.find(u => u.email === userEmail);
     if (!user) {
-      user = { email, totpEnabled: false };
+      user = { email: userEmail, totpEnabled: false };
       db.users = db.users || [];
       db.users.push(user);
       writeDB(db);
@@ -41,10 +50,9 @@ export async function POST(request: Request) {
     // If TOTP is NOT enabled and no code provided, generate secret and ask to setup
     if (!user.totpEnabled && !totpCode) {
       const secret = generateSecret();
-      const otpauth = generateURI({ issuer: 'MediaServer', label: email, secret });
+      const otpauth = generateURI({ issuer: 'MediaServer', label: userEmail, secret });
       const qrCode = await QRCode.toDataURL(otpauth);
       
-      // temporarily store secret
       user.totpSecret = secret;
       writeDB(db);
 
@@ -64,7 +72,6 @@ export async function POST(request: Request) {
           return NextResponse.json({ error: 'Invalid email code. Please try again.' }, { status: 400 });
         }
         
-        // Clear the code after successful verification
         delete user.emailOtpCode;
         delete user.emailOtpExpires;
         writeDB(db);
@@ -74,12 +81,17 @@ export async function POST(request: Request) {
           return NextResponse.json({ error: 'Invalid 2FA code. Please try again.' }, { status: 400 });
         }
 
-        // If they were setting it up via Authenticator, mark it as enabled now
         if (!user.totpEnabled) {
           user.totpEnabled = true;
           writeDB(db);
         }
       }
+    }
+
+    // Claim the key if unclaimed
+    if (!keyObj.ownerEmail) {
+      db.accessKeys[keyIndex].ownerEmail = userEmail;
+      writeDB(db);
     }
 
     // Create a session cookie valid for 5 days
@@ -99,7 +111,7 @@ export async function POST(request: Request) {
 
     return response;
   } catch (error: any) {
-    console.error('Session creation error', error);
+    console.error('Claim error', error);
     return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
   }
 }
