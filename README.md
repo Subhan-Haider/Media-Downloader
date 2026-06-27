@@ -91,7 +91,43 @@ After deleting it, restart your Next.js dev server, and the warning should be go
 
 ---
 
-## 🌍 Deployment & Advanced Server Usage
+## 🍪 YouTube Cookies (Age-Restricted & Private Videos)
+
+Some YouTube videos require you to be signed in to download them (e.g. age-restricted content). You can fix this by providing your browser's YouTube cookies to the app.
+
+### How to Get Your Cookies
+
+1. Open **Chrome** and make sure you are **signed into YouTube**
+2. Install the [Get cookies.txt LOCALLY](https://chromewebstore.google.com/detail/get-cookiestxt-locally/cclelndahbckbenkjhflpdbgdldlbecc) browser extension
+3. Navigate to [youtube.com](https://youtube.com)
+4. Click the extension icon → **Export** → save as `youtube_cookies.txt`
+
+### Where to Save the File on Your Server
+
+Place the file at:
+```
+~/Media-Downloader/data/youtube_cookies.txt
+```
+
+Using the terminal:
+```bash
+cd ~/Media-Downloader/data
+nano youtube_cookies.txt
+# Paste your cookie content, then Ctrl+O → Enter to save, Ctrl+X to exit
+```
+
+### Using the Admin Dashboard (Easiest Way)
+
+You can also upload cookies directly from the web UI — no SSH needed:
+1. Go to your **Admin Dashboard → Settings**
+2. Find the **YouTube Cookies** section
+3. Paste the contents of your `youtube_cookies.txt` file and save
+
+> **Note:** Cookies expire after about 1 year. If age-restricted downloads stop working, just export fresh cookies from your browser and re-upload them.
+
+---
+
+
 
 If you want to run this application permanently on a Linux server (like an Ubuntu VPS) or run it on a different port, follow these steps:
 
