@@ -85,8 +85,12 @@ export default function SettingsPage() {
   const [savingIgCookies, setSavingIgCookies] = useState(false);
   const [igCookiesSaved, setIgCookiesSaved] = useState(false);
 
+  const [systemSettings, setSystemSettings] = useState<{ enableWatermark: boolean }>({ enableWatermark: true });
+  const [savingWatermark, setSavingWatermark] = useState(false);
+
   useEffect(() => {
     fetch('/api/notifications').then(r => r.json()).then(d => setPrefs(d.preferences || {}));
+    fetch('/api/settings').then(r => r.json()).then(d => setSystemSettings(d.settings || { enableWatermark: true }));
   }, []);
 
   const isEnabled = (event: string) => prefs[event] !== false; // default true
@@ -153,6 +157,25 @@ export default function SettingsPage() {
       alert(`Failed to save ${type} cookies`);
     } finally {
       setSaving(false);
+    }
+  };
+
+  const toggleWatermark = async () => {
+    const newVal = !systemSettings.enableWatermark;
+    setSavingWatermark(true);
+    setSystemSettings(s => ({ ...s, enableWatermark: newVal }));
+    try {
+      await fetch('/api/settings', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ settings: { enableWatermark: newVal } }),
+      });
+    } catch (e) {
+      console.error(e);
+      alert('Failed to update watermark setting');
+      setSystemSettings(s => ({ ...s, enableWatermark: !newVal })); // revert
+    } finally {
+      setSavingWatermark(false);
     }
   };
 
@@ -252,8 +275,27 @@ export default function SettingsPage() {
             <span style={{ fontWeight: 700 }}>{enabledCount} / {ALL_EVENTS.length}</span>
             <span style={{ color: 'var(--text-muted)', marginLeft: '0.5rem' }}>notifications active</span>
           </div>
-          <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>
-            Changes save instantly
+          <div style={{ fontSize: '0.85rem' }}>
+            Notifications are sent to your configured Discord webhook when events occur.
+          </div>
+        </div>
+
+        <div className="notif-group">
+          <div className="notif-group-title">System Settings</div>
+          <div className="notif-card" style={{ padding: '0', marginBottom: '2rem' }}>
+            <div className="notif-row">
+              <div className="notif-info">
+                <div className="notif-label">Enable Video Watermark</div>
+                <div className="notif-desc">Add a subtle overlay to downloaded videos (for supported formats).</div>
+              </div>
+              <div 
+                className={`toggle-track ${systemSettings.enableWatermark ? 'on' : 'off'}`} 
+                onClick={savingWatermark ? undefined : toggleWatermark}
+                style={{ opacity: savingWatermark ? 0.5 : 1 }}
+              >
+                <div className="toggle-thumb" />
+              </div>
+            </div>
           </div>
         </div>
 
@@ -334,7 +376,6 @@ export default function SettingsPage() {
               </div>
             </div>
           </div>
-        </div>
         </div>
 
         <div className="notif-header-actions" style={{ marginBottom: '1rem' }}>
