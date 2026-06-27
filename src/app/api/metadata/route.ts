@@ -20,14 +20,20 @@ export async function POST(request: Request) {
 
     const isYouTube = url.includes('youtube.com') || url.includes('youtu.be');
 
+    const isInstagram = url.includes('instagram.com');
+
     if (browserAuth && browserAuth !== 'none') {
       options.cookiesFromBrowser = browserAuth;
     }
     
-    // Check for explicit youtube cookies file
+    // Check for explicit cookies files
     const ytCookiesPath = join(process.cwd(), 'data', 'youtube_cookies.txt');
+    const igCookiesPath = join(process.cwd(), 'data', 'instagram_cookies.txt');
+    
     if (isYouTube && fs.existsSync(ytCookiesPath)) {
       options.cookies = `"${ytCookiesPath}"`;
+    } else if (isInstagram && fs.existsSync(igCookiesPath)) {
+      options.cookies = `"${igCookiesPath}"`;
     }
 
     const info = await youtubedl(url, options) as any;
