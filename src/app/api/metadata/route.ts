@@ -63,6 +63,36 @@ export async function POST(request: Request) {
     });
   } catch (error: any) {
     let errMsg = error.message || String(error);
+    
+    // Fallback for Instagram images (yt-dlp fails with "No video formats found")
+    if (url.includes('instagram.com')) {
+      try {
+        const urlObj = new URL(url);
+        const embedUrl = `https://www.instagram.com${urlObj.pathname.replace(/\/$/, '')}/embed/`;
+        console.log("Fallback fetching: ", embedUrl);
+        const response = await fetch(embedUrl, {
+          headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Microsoft Windows 10.0.19045; en-US) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36' }
+        });
+        const pageHtml = await response.text();
+        const imgMatch = pageHtml.match(/class="EmbeddedMediaImage"[^>]+src="([^"]+)"/i) || pageHtml.match(/EmbeddedMediaImage[^>]+src="([^"]+)"/i);
+        
+        if (imgMatch) {
+          const thumbnail = imgMatch[1].replace(/&amp;/g, '&');
+          console.log("Fallback success: ", thumbnail.substring(0, 30));
+          return NextResponse.json({ 
+            title: 'Instagram Post',
+            thumbnail: thumbnail,
+            duration: '',
+            qualities: [] 
+          });
+        } else {
+          console.log("Fallback failed: no image match found in HTML");
+        }
+      } catch (e) {
+        console.error("Fallback error: ", e);
+      }
+    }
+
     if (errMsg.includes('Sign in to confirm your age')) {
       errMsg = 'Age-restricted video. Please paste your YouTube cookies in the Settings page to authenticate.';
     }
