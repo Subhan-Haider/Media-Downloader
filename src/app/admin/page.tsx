@@ -288,10 +288,10 @@ export default function AdminDashboard() {
                   {Math.round(Math.min(stats.cpu.loadAvg[0] / stats.cpu.cores * 100, 100))}%
                 </div>
               </div>
-              <div>
+              <div style={{ minWidth: 0, overflow: 'hidden' }}>
                 <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em' }}>CPU</div>
                 <div style={{ fontSize: '1.1rem', fontWeight: 700 }}>{stats.cpu.cores} Cores</div>
-                <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{stats.cpu.model.substring(0, 15)}...</div>
+                <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }} title={stats.cpu.model}>{stats.cpu.model}</div>
               </div>
             </>
           )}
