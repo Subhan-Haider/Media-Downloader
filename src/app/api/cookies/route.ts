@@ -10,7 +10,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Missing cookies string' }, { status: 400 });
     }
 
-    const dataDir = join(process.cwd(), 'data');
+    const dataDir = join(/*turbopackIgnore: true*/ process.cwd(), 'data');
     if (!fs.existsSync(dataDir)) {
       fs.mkdirSync(dataDir, { recursive: true });
     }
