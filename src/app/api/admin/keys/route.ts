@@ -11,7 +11,12 @@ export async function GET() {
   try {
     await adminAuth.verifySessionCookie(session);
     const db = readDB();
-    return NextResponse.json({ keys: db.accessKeys || [] });
+    const keysWithStats = (db.accessKeys || []).map(k => {
+      const downloadsCount = db.library.filter(m => m.ownerKey === k.key).length + 
+                             db.queue.filter(m => m.ownerKey === k.key).length;
+      return { ...k, downloadsCount };
+    });
+    return NextResponse.json({ keys: keysWithStats });
   } catch (error) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }

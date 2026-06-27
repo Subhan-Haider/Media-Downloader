@@ -54,7 +54,7 @@ export default function Navigation({ isAdmin }: { isAdmin?: boolean }) {
     <>
       <style>{`
         .nav-wrapper {
-          position: fixed;
+          position: sticky;
           top: 0;
           left: 0;
           right: 0;

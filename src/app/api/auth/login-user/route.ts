@@ -37,6 +37,16 @@ export async function POST(request: Request) {
       writeDB(db);
     }
 
+    // If 2FA is explicitly disabled by admin, bypass
+    if (user.totpRequired === false) {
+      // Create session without 2FA
+      const expiresIn = 60 * 60 * 24 * 5 * 1000;
+      const sessionCookie = await adminAuth.createSessionCookie(idToken, { expiresIn });
+      const response = NextResponse.json({ success: true }, { status: 200 });
+      response.cookies.set('user_session', sessionCookie, { maxAge: expiresIn, httpOnly: true, secure: process.env.NODE_ENV === 'production', path: '/', sameSite: 'lax' });
+      return response;
+    }
+
     // If TOTP is enabled and no code provided, ask for it
     if (user.totpEnabled && !totpCode) {
       return NextResponse.json({ requiresTotp: true }, { status: 200 });

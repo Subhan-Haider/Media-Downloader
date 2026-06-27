@@ -24,6 +24,8 @@ const COLORS: Record<string, number> = {
   file_deleted:        0xDC2626,
   library_cleared:     0x7F1D1D,
   large_file:          0xB45309,
+  external_upload_success: 0x10B981,
+  external_upload_failed: 0xEF4444,
   // Platform detections
   youtube_queued:      0xFF0000,
   instagram_queued:    0xE1306C,

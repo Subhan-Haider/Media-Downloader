@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { ShieldAlert, Server, HardDrive, Cpu, Activity, Settings, RefreshCw, Terminal, Trash2, X, Users, UserPlus, UserMinus, Palette, Edit2, Check } from 'lucide-react';
+import { ShieldAlert, Server, HardDrive, Cpu, Activity, Settings, RefreshCw, Terminal, Trash2, X, Users, UserPlus, UserMinus, Palette, Edit2, Check, Pause, Play, Unlock } from 'lucide-react';
 
 export default function AdminDashboard() {
   const [stats, setStats] = useState<any>(null);
@@ -19,6 +19,9 @@ export default function AdminDashboard() {
   const [newAdminRole, setNewAdminRole] = useState('limited');
   const [isSuperAdmin, setIsSuperAdmin] = useState(false);
   const [userRole, setUserRole] = useState<string | null>(null);
+
+  // User Management
+  const [users, setUsers] = useState<any[]>([]);
 
   // Access Keys
   const [accessKeys, setAccessKeys] = useState<any[]>([]);
@@ -41,6 +44,7 @@ export default function AdminDashboard() {
     fetchAuth();
     fetchSettings();
     fetchKeys();
+    fetchUsers();
     // Poll every 5 seconds
     const interval = setInterval(fetchStats, 5000);
     return () => clearInterval(interval);
@@ -132,6 +136,14 @@ export default function AdminDashboard() {
     } catch (e) {}
   };
 
+  const fetchUsers = async () => {
+    try {
+      const res = await fetch('/api/admin/users');
+      const data = await res.json();
+      setUsers(data.users || []);
+    } catch (e) {}
+  };
+
   const fetchSettings = async () => {
     try {
       const res = await fetch('/api/settings');
@@ -172,8 +184,36 @@ export default function AdminDashboard() {
       if (data.error) alert(data.error);
       else setAdmins(data.admins);
       setNewAdminEmail('');
+      fetchUsers(); // Refresh users list too
     } catch (e) {
       alert('Failed to update admins');
+    }
+  };
+
+  const handleUserAction = async (action: 'disable_2fa' | 'change_email' | 'delete' | 'toggle_2fa_requirement', email: string) => {
+    let newEmail = undefined;
+    if (action === 'delete' && !confirm(`Are you sure you want to completely delete ${email}?`)) return;
+    if (action === 'disable_2fa' && !confirm(`Are you sure you want to disable 2FA for ${email}?`)) return;
+    if (action === 'change_email') {
+      newEmail = prompt(`Enter new email for ${email}:`);
+      if (!newEmail) return;
+    }
+
+    try {
+      const res = await fetch('/api/admin/users', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action, email, newEmail })
+      });
+      const data = await res.json();
+      if (data.error) alert(data.error);
+      else {
+        fetchUsers();
+        fetchAdmins();
+        fetchKeys();
+      }
+    } catch (e) {
+      alert('Failed to manage user');
     }
   };
 
@@ -211,107 +251,90 @@ export default function AdminDashboard() {
         </div>
       )}
 
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '1.5rem', marginBottom: '2rem' }}>
+      <div style={{ display: 'flex', flexWrap: 'wrap', gap: '1rem', marginBottom: '2rem' }}>
         
-        {/* Memory Card */}
-        <div className="glass-panel" style={{ padding: '1.5rem', borderRadius: '12px' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '1rem', color: 'var(--text-secondary)' }}>
-            <Activity size={20} />
-            <h3 style={{ margin: 0 }}>Memory Usage</h3>
-          </div>
-          {loading || !stats ? (
-            <p>Loading...</p>
-          ) : (
-            <div>
-              <div style={{ fontSize: '1.8rem', fontWeight: 'bold', marginBottom: '4px' }}>
-                {formatBytes(stats.memory.used)} / {formatBytes(stats.memory.total)}
+        {/* Memory Gauge */}
+        <div className="glass-panel" style={{ padding: '1rem 1.5rem', borderRadius: '12px', display: 'flex', alignItems: 'center', gap: '1rem', flex: '1 1 220px', minWidth: '220px' }}>
+          {loading || !stats ? <p style={{ margin: 0 }}>Loading...</p> : (
+            <>
+              <div style={{ position: 'relative', width: '56px', height: '56px', flexShrink: 0 }}>
+                <svg viewBox="0 0 36 36" style={{ width: '100%', height: '100%', transform: 'rotate(-90deg)' }}>
+                  <circle cx="18" cy="18" r="15.5" fill="none" stroke="rgba(0,0,0,0.08)" strokeWidth="3" />
+                  <circle cx="18" cy="18" r="15.5" fill="none" stroke="var(--primary)" strokeWidth="3" strokeDasharray={`${(stats.memory.used / stats.memory.total) * 97.4} 97.4`} strokeLinecap="round" />
+                </svg>
+                <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.65rem', fontWeight: 700 }}>
+                  {Math.round((stats.memory.used / stats.memory.total) * 100)}%
+                </div>
               </div>
-              <p style={{ margin: 0, color: 'var(--text-secondary)' }}>
-                {formatBytes(stats.memory.free)} free
-              </p>
-              <div style={{ width: '100%', height: '8px', background: 'rgba(255,255,255,0.1)', borderRadius: '4px', marginTop: '1rem', overflow: 'hidden' }}>
-                <div style={{ height: '100%', background: 'var(--primary)', width: `${(stats.memory.used / stats.memory.total) * 100}%` }} />
+              <div>
+                <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Memory</div>
+                <div style={{ fontSize: '1.1rem', fontWeight: 700 }}>{formatBytes(stats.memory.used)}</div>
+                <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>of {formatBytes(stats.memory.total)}</div>
               </div>
-            </div>
+            </>
           )}
         </div>
 
-        {/* CPU Card */}
-        <div className="glass-panel" style={{ padding: '1.5rem', borderRadius: '12px' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '1rem', color: 'var(--text-secondary)' }}>
-            <Cpu size={20} />
-            <h3 style={{ margin: 0 }}>CPU Stats</h3>
-          </div>
-          {loading || !stats ? (
-            <p>Loading...</p>
-          ) : (
-            <div>
-              <div style={{ fontSize: '1.8rem', fontWeight: 'bold', marginBottom: '4px' }}>
-                {stats.cpu.cores} Cores
+        {/* CPU Gauge */}
+        <div className="glass-panel" style={{ padding: '1rem 1.5rem', borderRadius: '12px', display: 'flex', alignItems: 'center', gap: '1rem', flex: '1 1 220px', minWidth: '220px' }}>
+          {loading || !stats ? <p style={{ margin: 0 }}>Loading...</p> : (
+            <>
+              <div style={{ position: 'relative', width: '56px', height: '56px', flexShrink: 0 }}>
+                <svg viewBox="0 0 36 36" style={{ width: '100%', height: '100%', transform: 'rotate(-90deg)' }}>
+                  <circle cx="18" cy="18" r="15.5" fill="none" stroke="rgba(0,0,0,0.08)" strokeWidth="3" />
+                  <circle cx="18" cy="18" r="15.5" fill="none" stroke="#ec4899" strokeWidth="3" strokeDasharray={`${Math.min(stats.cpu.loadAvg[0] / stats.cpu.cores * 97.4, 97.4)} 97.4`} strokeLinecap={stats.cpu.loadAvg[0] === 0 ? "butt" : "round"} />
+                </svg>
+                <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.65rem', fontWeight: 700 }}>
+                  {Math.round(Math.min(stats.cpu.loadAvg[0] / stats.cpu.cores * 100, 100))}%
+                </div>
               </div>
-              <p style={{ margin: 0, color: 'var(--text-secondary)', fontSize: '0.9rem', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                {stats.cpu.model}
-              </p>
-              <div style={{ marginTop: '1rem', fontSize: '0.9rem', color: 'var(--text-secondary)' }}>
-                Load Avg (1m, 5m, 15m):<br/>
-                {stats.cpu.loadAvg.map((n: number) => n.toFixed(2)).join(', ')}
+              <div>
+                <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em' }}>CPU</div>
+                <div style={{ fontSize: '1.1rem', fontWeight: 700 }}>{stats.cpu.cores} Cores</div>
+                <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{stats.cpu.model.substring(0, 15)}...</div>
               </div>
-            </div>
+            </>
           )}
         </div>
 
-        {/* Disk Space Card */}
-        <div className="glass-panel" style={{ padding: '1.5rem', borderRadius: '12px' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '1rem', color: 'var(--text-secondary)' }}>
-            <HardDrive size={20} />
-            <h3 style={{ margin: 0 }}>Storage (Disk)</h3>
-          </div>
-          {loading || !stats ? (
-            <p>Loading...</p>
-          ) : stats.disk ? (
-            <div>
-              <div style={{ fontSize: '1.8rem', fontWeight: 'bold', marginBottom: '4px' }}>
-                {formatBytes(stats.disk.available)} Free
+        {/* Disk Gauge */}
+        <div className="glass-panel" style={{ padding: '1rem 1.5rem', borderRadius: '12px', display: 'flex', alignItems: 'center', gap: '1rem', flex: '1 1 220px', minWidth: '220px' }}>
+          {loading || !stats ? <p style={{ margin: 0 }}>Loading...</p> : stats.disk ? (
+            <>
+              <div style={{ position: 'relative', width: '56px', height: '56px', flexShrink: 0 }}>
+                <svg viewBox="0 0 36 36" style={{ width: '100%', height: '100%', transform: 'rotate(-90deg)' }}>
+                  <circle cx="18" cy="18" r="15.5" fill="none" stroke="rgba(0,0,0,0.08)" strokeWidth="3" />
+                  <circle cx="18" cy="18" r="15.5" fill="none" stroke="#10b981" strokeWidth="3" strokeDasharray={`${((stats.disk.total - stats.disk.available) / stats.disk.total) * 97.4} 97.4`} strokeLinecap="round" />
+                </svg>
+                <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.65rem', fontWeight: 700 }}>
+                  {Math.round(((stats.disk.total - stats.disk.available) / stats.disk.total) * 100)}%
+                </div>
               </div>
-              <p style={{ margin: 0, color: 'var(--text-secondary)' }}>
-                Total: {formatBytes(stats.disk.total)}
-              </p>
-              <div style={{ width: '100%', height: '8px', background: 'rgba(255,255,255,0.1)', borderRadius: '4px', marginTop: '1rem', overflow: 'hidden' }}>
-                <div style={{ height: '100%', background: '#10b981', width: `${((stats.disk.total - stats.disk.available) / stats.disk.total) * 100}%` }} />
+              <div>
+                <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Disk</div>
+                <div style={{ fontSize: '1.1rem', fontWeight: 700 }}>{formatBytes(stats.disk.total - stats.disk.available)}</div>
+                <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>of {formatBytes(stats.disk.total)}</div>
               </div>
-            </div>
-          ) : (
-            <p>Disk stats unavailable</p>
+            </>
+          ) : <p style={{ margin: 0 }}>No disk info</p>}
+        </div>
+
+        {/* Environment Mini */}
+        <div className="glass-panel" style={{ padding: '1rem 1.5rem', borderRadius: '12px', display: 'flex', alignItems: 'center', gap: '1rem', flex: '1 1 220px', minWidth: '220px' }}>
+          {loading || !stats ? <p style={{ margin: 0 }}>Loading...</p> : (
+            <>
+              <div style={{ width: '56px', height: '56px', borderRadius: '50%', background: 'rgba(99,102,241,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                <Server size={22} color="#6366f1" />
+              </div>
+              <div style={{ fontSize: '0.8rem', display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                <div><span style={{ color: 'var(--text-muted)' }}>OS:</span> <strong>{stats.os.platform}</strong></div>
+                <div><span style={{ color: 'var(--text-muted)' }}>Node:</span> <strong>{stats.node.version}</strong></div>
+                <div><span style={{ color: 'var(--text-muted)' }}>Up:</span> <strong>{Math.floor(stats.os.uptime / 3600)}h {Math.floor((stats.os.uptime % 3600) / 60)}m</strong></div>
+              </div>
+            </>
           )}
         </div>
 
-        {/* System Info Card */}
-        <div className="glass-panel" style={{ padding: '1.5rem', borderRadius: '12px' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '1rem', color: 'var(--text-secondary)' }}>
-            <Server size={20} />
-            <h3 style={{ margin: 0 }}>Environment</h3>
-          </div>
-          {loading || !stats ? (
-            <p>Loading...</p>
-          ) : (
-            <div>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                  <span style={{ color: 'var(--text-secondary)' }}>Platform</span>
-                  <span>{stats.os.platform} ({stats.os.release})</span>
-                </div>
-                <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                  <span style={{ color: 'var(--text-secondary)' }}>Node.js</span>
-                  <span>{stats.node.version}</span>
-                </div>
-                <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                  <span style={{ color: 'var(--text-secondary)' }}>Server Uptime</span>
-                  <span>{Math.floor(stats.os.uptime / 3600)} hrs {Math.floor((stats.os.uptime % 3600) / 60)} mins</span>
-                </div>
-              </div>
-            </div>
-          )}
-        </div>
       </div>
 
       {(userRole === 'super' || userRole === 'full') && (
@@ -434,7 +457,7 @@ export default function AdminDashboard() {
               {accessKeys.map(k => {
                 const isEditing = editingKey === k.key;
                 return (
-                  <div key={k.key} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '1rem', background: '#ffffff', borderRadius: '8px', border: '1px solid var(--border)' }}>
+                  <div key={k.key} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '1rem', background: '#ffffff', borderRadius: '8px', border: '1px solid var(--border)', opacity: k.isActive === false ? 0.6 : 1 }}>
                     {isEditing ? (
                       <div style={{ display: 'flex', gap: '0.5rem', flex: 1, alignItems: 'center' }}>
                         <input 
@@ -449,8 +472,23 @@ export default function AdminDashboard() {
                       </div>
                     ) : (
                       <div>
-                        <div style={{ fontWeight: 600, marginBottom: '4px' }}>{k.name}</div>
-                        <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', fontFamily: 'monospace', background: 'rgba(0,0,0,0.08)', padding: '2px 6px', borderRadius: '4px' }}>
+                        <div style={{ fontWeight: 600, marginBottom: '4px', display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: '8px' }}>
+                          <span>{k.name}</span>
+                          {k.ownerEmail && (
+                            <span style={{ fontSize: '0.75rem', fontWeight: 'normal', color: '#10b981', background: 'rgba(16, 185, 129, 0.1)', padding: '2px 8px', borderRadius: '4px', border: '1px solid rgba(16, 185, 129, 0.2)' }}>
+                              Claimed: {k.ownerEmail}
+                            </span>
+                          )}
+                          <span style={{ fontSize: '0.75rem', fontWeight: 'normal', color: '#8b5cf6', background: 'rgba(139, 92, 246, 0.1)', padding: '2px 8px', borderRadius: '4px', border: '1px solid rgba(139, 92, 246, 0.2)' }}>
+                            Downloads: {k.downloadsCount || 0}
+                          </span>
+                          {k.isActive === false && (
+                            <span style={{ fontSize: '0.75rem', fontWeight: 'normal', color: '#f59e0b', background: 'rgba(245, 158, 11, 0.1)', padding: '2px 8px', borderRadius: '4px', border: '1px solid rgba(245, 158, 11, 0.2)' }}>
+                              Paused
+                            </span>
+                          )}
+                        </div>
+                        <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', fontFamily: 'monospace', background: 'rgba(0,0,0,0.08)', padding: '2px 6px', borderRadius: '4px', display: 'inline-block' }}>
                           Key: {k.key}
                         </div>
                       </div>
@@ -494,6 +532,29 @@ export default function AdminDashboard() {
                         ) : (
                           <>
                             <button 
+                              onClick={() => handleKeyAction('update', k.key, { isActive: k.isActive === false ? true : false })}
+                              style={{ background: 'transparent', border: 'none', color: k.isActive === false ? '#10b981' : '#f59e0b', cursor: 'pointer', padding: '4px' }}
+                              title={k.isActive === false ? "Resume Key" : "Pause Key"}
+                            >
+                              {k.isActive === false ? <Play size={18} /> : <Pause size={18} />}
+                            </button>
+                            <button 
+                              onClick={() => { if(confirm('Reset used GB to 0?')) handleKeyAction('update', k.key, { usedGb: 0 }) }}
+                              style={{ background: 'transparent', border: 'none', color: '#3b82f6', cursor: 'pointer', padding: '4px' }}
+                              title="Reset Data Usage"
+                            >
+                              <RefreshCw size={18} />
+                            </button>
+                            {k.ownerEmail && (
+                              <button 
+                                onClick={() => { if(confirm('Revoke claim so someone else can use this key?')) handleKeyAction('update', k.key, { ownerEmail: null }) }}
+                                style={{ background: 'transparent', border: 'none', color: '#8b5cf6', cursor: 'pointer', padding: '4px' }}
+                                title="Revoke Claim"
+                              >
+                                <Unlock size={18} />
+                              </button>
+                            )}
+                            <button 
                               onClick={() => {
                                 setEditingKey(k.key);
                                 setEditKeyName(k.name);
@@ -505,9 +566,9 @@ export default function AdminDashboard() {
                               <Edit2 size={18} />
                             </button>
                             <button 
-                              onClick={() => handleKeyAction('delete', k.key)}
+                              onClick={() => { if(confirm('Are you sure you want to delete this key?')) handleKeyAction('delete', k.key) }}
                               style={{ background: 'transparent', border: 'none', color: '#ef4444', cursor: 'pointer', padding: '4px' }}
-                              title="Delete"
+                              title="Delete Key"
                             >
                               <Trash2 size={18} />
                             </button>
@@ -643,6 +704,79 @@ export default function AdminDashboard() {
                   )}
                 </div>
               ))}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* User Management */}
+      {(isSuperAdmin || userRole === 'full') && (
+        <div style={{ marginTop: '2rem' }}>
+          <h2 style={{ fontSize: '1.5rem', marginBottom: '1rem' }}>User Management</h2>
+          <div className="glass-panel" style={{ padding: '1.5rem', borderRadius: '12px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '1rem', color: 'var(--text-secondary)' }}>
+              <Users size={20} />
+              <h3 style={{ margin: 0 }}>Registered Users</h3>
+            </div>
+            <p style={{ margin: '0 0 1.5rem 0', color: 'var(--text-secondary)', fontSize: '0.9rem' }}>
+              Manage all registered accounts, change emails, and disable 2FA if users lose access.
+            </p>
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+              {users.map(u => (
+                <div key={u.email} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0.8rem 1rem', background: '#ffffff', borderRadius: '8px', border: '1px solid var(--border)' }}>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                    <span style={{ fontWeight: 500, display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      {u.email} 
+                      {u.role === 'super' && <span style={{ color: 'var(--primary)', fontSize: '0.7rem', fontWeight: 700 }}>(SUPER ADMIN)</span>}
+                      {u.role === 'full' && <span style={{ color: '#10b981', fontSize: '0.7rem', fontWeight: 700 }}>(FULL ADMIN)</span>}
+                      {u.role === 'limited' && <span style={{ color: '#f59e0b', fontSize: '0.7rem', fontWeight: 700 }}>(LIMITED ADMIN)</span>}
+                      {u.role === 'regular' && <span style={{ color: '#8b5cf6', fontSize: '0.7rem', fontWeight: 700 }}>(USER)</span>}
+                    </span>
+                    <span style={{ fontSize: '0.75rem', color: u.totpEnabled ? '#10b981' : (u.totpRequired ? '#ef4444' : '#9ca3af') }}>
+                      2FA: {u.totpEnabled ? 'Active' : (u.totpRequired ? 'Required (Pending Setup)' : 'Bypassed')}
+                    </span>
+                  </div>
+                  
+                  <div style={{ display: 'flex', gap: '0.5rem' }}>
+                    {u.totpEnabled && (
+                      <button 
+                        onClick={() => handleUserAction('disable_2fa', u.email)}
+                        style={{ background: 'transparent', border: '1px solid var(--border)', borderRadius: '4px', color: '#f59e0b', cursor: 'pointer', padding: '4px 8px', fontSize: '0.8rem' }}
+                        title="Disable 2FA"
+                      >
+                        Disable 2FA
+                      </button>
+                    )}
+                    <button 
+                      onClick={() => handleUserAction('toggle_2fa_requirement', u.email)}
+                      style={{ background: 'transparent', border: '1px solid var(--border)', borderRadius: '4px', color: u.totpRequired ? '#f59e0b' : '#10b981', cursor: 'pointer', padding: '4px 8px', fontSize: '0.8rem' }}
+                      title={u.totpRequired ? "Make 2FA optional for this user" : "Force this user to set up 2FA"}
+                    >
+                      {u.totpRequired ? "Don't Require 2FA" : "Require 2FA"}
+                    </button>
+                    {u.role !== 'super' && (
+                      <button 
+                        onClick={() => handleUserAction('change_email', u.email)}
+                        style={{ background: 'transparent', border: '1px solid var(--border)', borderRadius: '4px', color: 'var(--primary)', cursor: 'pointer', padding: '4px 8px', fontSize: '0.8rem' }}
+                        title="Change Email"
+                      >
+                        Change Email
+                      </button>
+                    )}
+                    {u.role !== 'super' && (
+                      <button 
+                        onClick={() => handleUserAction('delete', u.email)}
+                        style={{ background: 'transparent', border: '1px solid var(--border)', borderRadius: '4px', color: '#ef4444', cursor: 'pointer', padding: '4px 8px', fontSize: '0.8rem' }}
+                        title="Delete User"
+                      >
+                        Delete
+                      </button>
+                    )}
+                  </div>
+                </div>
+              ))}
+              {users.length === 0 && <p style={{ color: 'var(--text-muted)' }}>No users found.</p>}
             </div>
           </div>
         </div>

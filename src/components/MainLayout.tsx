@@ -17,7 +17,7 @@ export default function MainLayout({ children, isAdmin }: { children: React.Reac
     <>
       <Navigation isAdmin={isAdmin} />
       
-      <main style={{ paddingTop: '140px', minHeight: 'calc(100vh - 80px)', paddingBottom: '40px' }}>
+      <main style={{ paddingTop: '60px', minHeight: 'calc(100vh - 80px)', paddingBottom: '40px' }}>
         {children}
       </main>
       

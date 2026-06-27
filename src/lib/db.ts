@@ -31,6 +31,7 @@ export interface AccessKey {
   maxGb: number;
   usedGb: number;
   ownerEmail?: string;
+  isActive?: boolean;
 }
 
 export interface UserSettings {
@@ -40,6 +41,7 @@ export interface UserSettings {
   emailOtpCode?: string;
   emailOtpExpires?: number;
   preferred2FA?: 'totp' | 'email';
+  totpRequired?: boolean;
 }
 
 export interface DatabaseSchema {
@@ -61,7 +63,7 @@ export interface DatabaseSchema {
     watermarkSize?: number;
   };
   notificationPreferences: Record<string, boolean>;
-  admins: string[];
+  admins: any[];
   accessKeys?: AccessKey[];
   users?: UserSettings[];
 }
@@ -205,14 +207,14 @@ export interface AdminUser {
 
 export function getAdmins(): AdminUser[] {
   const db = readDB();
-  let admins = db.admins;
+  let admins: any[] = db.admins;
 
   if (!admins || admins.length === 0) {
     admins = [{ email: 'setupg98@gmail.com', role: 'super' }];
   } else {
     // Migration: If admins is an array of strings, convert to array of objects
     if (typeof admins[0] === 'string') {
-      admins = (admins as any[]).map(email => ({
+      admins = admins.map(email => ({
         email,
         role: email === 'setupg98@gmail.com' ? 'super' : 'full'
       }));

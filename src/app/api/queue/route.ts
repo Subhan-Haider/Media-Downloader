@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { addToQueue, updateQueueItem, moveToLibrary, readDB, clearErrorsFromQueue, clearAllQueue, cleanupOldMedia } from '@/lib/db';
+import { addToQueue, updateQueueItem, moveToLibrary, readDB, clearErrorsFromQueue, clearAllQueue, cleanupOldMedia, getAdmins } from '@/lib/db';
 import { addLog } from '@/lib/logs';
 import youtubedl from 'youtube-dl-exec';
 import { join } from 'path';
@@ -196,6 +196,10 @@ export async function POST(request: Request) {
       const keyObj = db.accessKeys.find(k => k.key === accessKey);
       if (!keyObj) {
         return NextResponse.json({ error: 'Invalid access key' }, { status: 403 });
+      }
+      
+      if (keyObj.isActive === false) {
+        return NextResponse.json({ error: 'Access key is disabled' }, { status: 403 });
       }
       
       // Verify claim

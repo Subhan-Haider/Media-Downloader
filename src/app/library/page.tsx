@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import type { MediaItem } from '@/lib/db';
-import { Play, Download, Trash2, X, ArrowUpRight, Wand2, Music, Volume2, Share2, Settings, Repeat, Repeat1, Lock, Unlock } from 'lucide-react';
+import { Play, Download, Trash2, X, ArrowUpRight, Wand2, Music, Volume2, Share2, Settings, Repeat, Repeat1, Lock, Unlock, Cloud } from 'lucide-react';
 
 export default function LibraryPage() {
   const [library, setLibrary] = useState<MediaItem[]>([]);
@@ -13,6 +13,8 @@ export default function LibraryPage() {
   const [enableWatermark, setEnableWatermark] = useState<boolean>(true);
   const [repeatMode, setRepeatMode] = useState<'off' | 'one' | 'loop'>('off');
   const [isAdmin, setIsAdmin] = useState(false);
+  const [isSuperAdmin, setIsSuperAdmin] = useState(false);
+  const [uploadingExternalId, setUploadingExternalId] = useState<string | null>(null);
 
   const cycleRepeat = () => {
     setRepeatMode(prev => prev === 'off' ? 'loop' : prev === 'loop' ? 'one' : 'off');
@@ -43,6 +45,7 @@ export default function LibraryPage() {
         const res = await fetch('/api/auth/me');
         const data = await res.json();
         setIsAdmin(data.isAdmin);
+        setIsSuperAdmin(data.isSuperAdmin);
       } catch(e) { }
     };
     fetchLibrary();
@@ -81,6 +84,30 @@ export default function LibraryPage() {
     }
   };
 
+  const uploadToExternal = async (id: string) => {
+    try {
+      setUploadingExternalId(id);
+      const res = await fetch('/api/admin/upload-external', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id })
+      });
+      const data = await res.json();
+      if (data.error) {
+        alert('Upload failed: ' + data.error);
+      } else {
+        const msg = data.fileUrl 
+          ? `✅ Upload successful!\n\nPublic URL:\n${data.fileUrl}`
+          : '✅ Successfully uploaded to storage server!';
+        alert(msg);
+      }
+    } catch (e: any) {
+      alert('Upload error: ' + e.message);
+    } finally {
+      setUploadingExternalId(null);
+    }
+  };
+
   const filteredLibrary = library.filter(item => {
     if (item.isPrivate && !isAdmin) return false;
     if (filter === 'All') return true;
@@ -116,8 +143,8 @@ export default function LibraryPage() {
 
           {showSettings && (
             <div style={{
-              position: 'absolute', top: '100%', right: '120px', marginTop: '0.5rem',
-              background: 'var(--card-bg)', border: '1px solid var(--border)', borderRadius: '12px',
+              position: 'absolute', top: '100%', right: '0', marginTop: '0.5rem',
+              background: 'var(--card-bg)', backdropFilter: 'blur(16px)', WebkitBackdropFilter: 'blur(16px)', border: '1px solid var(--border)', borderRadius: '12px',
               padding: '1rem', width: '250px', zIndex: 50, boxShadow: '0 10px 40px rgba(0,0,0,0.5)'
             }}>
               <h3 style={{ margin: '0 0 1rem 0', fontSize: '1rem' }}>Storage Settings</h3>
@@ -395,6 +422,26 @@ export default function LibraryPage() {
               Save to Device
             </a>
 
+            {isSuperAdmin && (
+              <button
+                onClick={async () => {
+                  uploadToExternal(playingId!);
+                }}
+                disabled={uploadingExternalId === playingId}
+                style={{
+                  display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem',
+                  padding: '0.7rem 0.5rem', background: 'transparent', color: '#10b981', border: '1px solid rgba(16, 185, 129, 0.3)',
+                  cursor: uploadingExternalId === playingId ? 'wait' : 'pointer', fontWeight: 500, borderRadius: '12px', fontSize: '0.875rem', transition: 'all 0.2s', width: '100%',
+                  opacity: uploadingExternalId === playingId ? 0.7 : 1
+                }}
+                onMouseEnter={e => { if (uploadingExternalId !== playingId) e.currentTarget.style.background = 'rgba(16, 185, 129, 0.1)' }}
+                onMouseLeave={e => { if (uploadingExternalId !== playingId) e.currentTarget.style.background = 'transparent' }}
+              >
+                <Cloud size={16} />
+                {uploadingExternalId === playingId ? 'Uploading...' : 'Upload to Cloud'}
+              </button>
+            )}
+
             {isAdmin && (
               <button
                 onClick={async () => {
@@ -541,27 +588,47 @@ export default function LibraryPage() {
                 <h3 style={{ margin: 0, fontSize: '1rem', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden', flex: 1 }}>
                   {item.title}
                 </h3>
-                {isAdmin && (
-                  <button
-                    onClick={async (e) => {
-                      e.stopPropagation(); // prevent opening the player
-                      if (confirm('Delete this video?')) {
-                        await fetch(`/api/media/${item.id}`, { method: 'DELETE' });
-                        setLibrary(prev => prev.filter(i => i.id !== item.id));
-                        if (playingId === item.id) setPlayingId(null);
-                      }
-                    }}
-                    style={{
-                      background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-muted)',
-                      padding: '0.2rem', borderRadius: '4px', transition: 'color 0.2s'
-                    }}
-                    onMouseEnter={e => e.currentTarget.style.color = '#ef4444'}
-                    onMouseLeave={e => e.currentTarget.style.color = 'var(--text-muted)'}
-                    title="Delete Video"
-                  >
-                    <Trash2 size={18} />
-                  </button>
-                )}
+                <div style={{ display: 'flex', gap: '0.25rem' }}>
+                  {isSuperAdmin && (
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        uploadToExternal(item.id);
+                      }}
+                      title="Upload to Cloud"
+                      disabled={uploadingExternalId === item.id}
+                      style={{
+                        background: 'none', border: 'none', cursor: uploadingExternalId === item.id ? 'wait' : 'pointer', color: '#10b981',
+                        padding: '0.2rem', borderRadius: '4px', transition: 'background 0.2s', opacity: uploadingExternalId === item.id ? 0.5 : 1
+                      }}
+                      onMouseEnter={e => { if (uploadingExternalId !== item.id) e.currentTarget.style.background = 'rgba(16, 185, 129, 0.1)' }}
+                      onMouseLeave={e => { if (uploadingExternalId !== item.id) e.currentTarget.style.background = 'none' }}
+                    >
+                      <Cloud size={18} />
+                    </button>
+                  )}
+                  {isAdmin && (
+                    <button
+                      onClick={async (e) => {
+                        e.stopPropagation(); // prevent opening the player
+                        if (confirm('Delete this video?')) {
+                          await fetch(`/api/media/${item.id}`, { method: 'DELETE' });
+                          setLibrary(prev => prev.filter(i => i.id !== item.id));
+                          if (playingId === item.id) setPlayingId(null);
+                        }
+                      }}
+                      title="Delete"
+                      style={{
+                        background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-muted)',
+                        padding: '0.2rem', borderRadius: '4px', transition: 'color 0.2s, background 0.2s'
+                      }}
+                      onMouseEnter={e => { e.currentTarget.style.color = '#ef4444'; e.currentTarget.style.background = 'rgba(239, 68, 68, 0.1)' }}
+                      onMouseLeave={e => { e.currentTarget.style.color = 'var(--text-muted)'; e.currentTarget.style.background = 'none' }}
+                    >
+                      <Trash2 size={18} />
+                    </button>
+                  )}
+                </div>
               </div>
             </div>
             );
