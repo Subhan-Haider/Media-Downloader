@@ -360,68 +360,72 @@ export default function LibraryPage() {
           })()}
 
           <div style={{
-            display: 'grid',
-            gridTemplateColumns: '1fr 1fr',
-            gap: '0.6rem',
-            padding: '1rem',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: '0.5rem',
+            padding: '0.75rem 1rem',
             background: 'var(--card-bg)',
             borderTop: '1px solid var(--border)',
           }}>
+            {/* Share */}
             <button
+              title="Copy Share Link"
               onClick={() => {
                 const url = `${window.location.origin}/v/${playingId}`;
                 navigator.clipboard.writeText(url);
                 alert('Share link copied to clipboard!');
               }}
               style={{
-                display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem',
-                padding: '0.7rem 0.5rem', background: 'transparent', color: 'var(--primary)', border: '1px solid var(--primary)',
-                cursor: 'pointer', fontWeight: 500, borderRadius: '12px', fontSize: '0.875rem', transition: 'all 0.2s', width: '100%'
+                width: 40, height: 40, borderRadius: '50%', border: '1px solid var(--border)',
+                background: 'transparent', color: 'var(--foreground)', cursor: 'pointer',
+                display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'all 0.15s', flexShrink: 0,
               }}
-              onMouseEnter={e => { e.currentTarget.style.background = 'rgba(var(--primary-rgb, 0, 112, 243), 0.1)' }}
-              onMouseLeave={e => { e.currentTarget.style.background = 'transparent' }}
+              onMouseEnter={e => { e.currentTarget.style.background = 'var(--hover)'; e.currentTarget.style.borderColor = 'var(--primary)'; e.currentTarget.style.color = 'var(--primary)'; }}
+              onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.borderColor = 'var(--border)'; e.currentTarget.style.color = 'var(--foreground)'; }}
             >
               <Share2 size={16} />
-              Share Link
             </button>
 
+            {/* Download — primary CTA */}
             <a
+              title="Save to Device"
               href={`/api/media/${playingId}?download=true`}
               download
               style={{
-                display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem',
-                padding: '0.7rem 0.5rem', background: 'var(--primary)', color: 'white', textDecoration: 'none',
-                fontWeight: 500, borderRadius: '12px', fontSize: '0.875rem', transition: 'all 0.2s'
+                height: 40, padding: '0 1.25rem', borderRadius: '20px',
+                background: 'var(--primary)', color: 'white', textDecoration: 'none',
+                display: 'flex', alignItems: 'center', gap: '0.4rem',
+                fontWeight: 600, fontSize: '0.82rem', transition: 'all 0.15s', flexShrink: 0,
               }}
-              onMouseEnter={e => { e.currentTarget.style.filter = 'brightness(1.1)'; }}
+              onMouseEnter={e => { e.currentTarget.style.filter = 'brightness(1.12)'; }}
               onMouseLeave={e => { e.currentTarget.style.filter = 'none'; }}
             >
-              <Download size={16} />
-              Save to Device
+              <Download size={15} />
+              Save
             </a>
 
             {isSuperAdmin && (
               <button
-                onClick={async () => {
-                  uploadToExternal(playingId!);
-                }}
+                title="Upload to Cloud"
+                onClick={async () => { uploadToExternal(playingId!); }}
                 disabled={uploadingExternalId === playingId}
                 style={{
-                  display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem',
-                  padding: '0.7rem 0.5rem', background: 'transparent', color: '#10b981', border: '1px solid rgba(16, 185, 129, 0.3)',
-                  cursor: uploadingExternalId === playingId ? 'wait' : 'pointer', fontWeight: 500, borderRadius: '12px', fontSize: '0.875rem', transition: 'all 0.2s', width: '100%',
-                  opacity: uploadingExternalId === playingId ? 0.7 : 1
+                  width: 40, height: 40, borderRadius: '50%', border: '1px solid rgba(16, 185, 129, 0.3)',
+                  background: 'transparent', color: '#10b981', cursor: uploadingExternalId === playingId ? 'wait' : 'pointer',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'all 0.15s', flexShrink: 0,
+                  opacity: uploadingExternalId === playingId ? 0.5 : 1,
                 }}
-                onMouseEnter={e => { if (uploadingExternalId !== playingId) e.currentTarget.style.background = 'rgba(16, 185, 129, 0.1)' }}
-                onMouseLeave={e => { if (uploadingExternalId !== playingId) e.currentTarget.style.background = 'transparent' }}
+                onMouseEnter={e => { if (uploadingExternalId !== playingId) e.currentTarget.style.background = 'rgba(16, 185, 129, 0.1)'; }}
+                onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; }}
               >
                 <Cloud size={16} />
-                {uploadingExternalId === playingId ? 'Uploading...' : 'Upload to Cloud'}
               </button>
             )}
 
             {isAdmin && (
               <button
+                title="Delete"
                 onClick={async () => {
                   if (confirm('Are you sure you want to permanently delete this file?')) {
                     await fetch(`/api/media/${playingId}`, { method: 'DELETE' });
@@ -430,30 +434,33 @@ export default function LibraryPage() {
                   }
                 }}
                 style={{
-                  display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem',
-                  padding: '0.7rem 0.5rem', background: 'transparent', color: '#ef4444', border: '1px solid rgba(239, 68, 68, 0.3)',
-                  cursor: 'pointer', fontWeight: 500, borderRadius: '12px', fontSize: '0.875rem', transition: 'all 0.2s', width: '100%'
+                  width: 40, height: 40, borderRadius: '50%', border: '1px solid rgba(239, 68, 68, 0.25)',
+                  background: 'transparent', color: '#ef4444', cursor: 'pointer',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'all 0.15s', flexShrink: 0,
                 }}
-                onMouseEnter={e => { e.currentTarget.style.background = 'rgba(239, 68, 68, 0.1)' }}
-                onMouseLeave={e => { e.currentTarget.style.background = 'transparent' }}
+                onMouseEnter={e => { e.currentTarget.style.background = 'rgba(239, 68, 68, 0.1)'; }}
+                onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; }}
               >
                 <Trash2 size={16} />
-                Delete
               </button>
             )}
 
+            {/* Divider */}
+            <div style={{ width: 1, height: 24, background: 'var(--border)', flexShrink: 0 }} />
+
+            {/* Close */}
             <button
+              title="Close"
               onClick={() => setPlayingId(null)}
               style={{
-                display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem',
-                padding: '0.7rem 0.5rem', background: 'var(--hover)', color: 'var(--foreground)', border: 'none',
-                cursor: 'pointer', fontWeight: 500, borderRadius: '12px', fontSize: '0.875rem', transition: 'all 0.2s', width: '100%'
+                width: 40, height: 40, borderRadius: '50%', border: 'none',
+                background: 'transparent', color: 'var(--text-muted)', cursor: 'pointer',
+                display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'all 0.15s', flexShrink: 0,
               }}
-              onMouseEnter={e => { e.currentTarget.style.background = 'var(--border)' }}
-              onMouseLeave={e => { e.currentTarget.style.background = 'var(--hover)' }}
+              onMouseEnter={e => { e.currentTarget.style.background = 'var(--hover)'; e.currentTarget.style.color = 'var(--foreground)'; }}
+              onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = 'var(--text-muted)'; }}
             >
-              <X size={16} />
-              Close
+              <X size={18} />
             </button>
           </div>
         </div>

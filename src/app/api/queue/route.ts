@@ -8,10 +8,10 @@ import fs from 'fs';
 import os from 'os';
 import { spawn } from 'child_process';
 import { notifyDiscord, getIp } from '@/lib/discord';
-
-const ffmpegPathGlobal = join(process.cwd(), 'node_modules', 'ffmpeg-static', 'ffmpeg' + (os.platform() === 'win32' ? '.exe' : ''));
 import { cookies } from 'next/headers';
 import { adminAuth } from '@/lib/firebaseAdmin';
+
+const ffmpegPathGlobal = join(process.cwd(), 'node_modules', 'ffmpeg-static', 'ffmpeg' + (os.platform() === 'win32' ? '.exe' : ''));
 
 function applyWatermarkPromise(filePath: string, id: string): Promise<void> {
   return new Promise((resolve) => {
