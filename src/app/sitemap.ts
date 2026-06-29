@@ -5,6 +5,8 @@ export default function sitemap(): MetadataRoute.Sitemap {
   const baseUrls = [
     'https://media-downloader.subhan.tech',
     'https://media.subhan.tech',
+    'https://MediaLoad.subhan.tech',
+    'https://MediaLoad.lootops.me',
     'https://media.lootops.me'
 
   ];
