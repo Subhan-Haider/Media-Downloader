@@ -145,7 +145,7 @@ export default function LibraryPage() {
             <div style={{
               position: 'absolute', top: '100%', right: '0', marginTop: '0.5rem',
               background: 'var(--card-bg)', backdropFilter: 'blur(16px)', WebkitBackdropFilter: 'blur(16px)', border: '1px solid var(--border)', borderRadius: '12px',
-              padding: '1rem', width: '250px', zIndex: 50, boxShadow: '0 10px 40px rgba(0,0,0,0.5)'
+              padding: '1rem', minWidth: '300px', width: 'max-content', maxWidth: '90vw', zIndex: 50, boxShadow: '0 10px 40px rgba(0,0,0,0.5)'
             }}>
               <h3 style={{ margin: '0 0 1rem 0', fontSize: '1rem' }}>Storage Settings</h3>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', marginBottom: '1.5rem' }}>
