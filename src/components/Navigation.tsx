@@ -1,15 +1,15 @@
 "use client";
 
 import Link from 'next/link';
-import { Download, ListMusic, Tv, Rss, Settings, LogOut, Shield } from 'lucide-react';
+import { Download, ListMusic, Tv, Rss, Settings, LogOut, Shield, Menu, X } from 'lucide-react';
 import { usePathname, useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 
 export default function Navigation({ isAdmin }: { isAdmin?: boolean }) {
   const pathname = usePathname();
   const router = useRouter();
-  const [visible, setVisible] = useState(true);
-  const [lastScrollY, setLastScrollY] = useState(0);
+  const [scrolled, setScrolled] = useState(false);
+  const [mobileOpen, setMobileOpen] = useState(false);
 
   const handleLogout = async () => {
     try {
@@ -22,158 +22,217 @@ export default function Navigation({ isAdmin }: { isAdmin?: boolean }) {
   };
 
   useEffect(() => {
-    const handleScroll = () => {
-      const currentY = window.scrollY;
-
-      // Always show when near the top (within 60px)
-      if (currentY < 60) {
-        setVisible(true);
-      } else if (currentY < lastScrollY) {
-        // Scrolling UP — show
-        setVisible(true);
-      } else {
-        // Scrolling DOWN — hide
-        setVisible(false);
-      }
-
-      setLastScrollY(currentY);
-    };
-
+    const handleScroll = () => setScrolled(window.scrollY > 10);
     window.addEventListener('scroll', handleScroll, { passive: true });
     return () => window.removeEventListener('scroll', handleScroll);
-  }, [lastScrollY]);
+  }, []);
+
+  // Close mobile menu on route change
+  useEffect(() => { setMobileOpen(false); }, [pathname]);
 
   // Hide navigation on public share pages
-  if (pathname?.startsWith('/v/')) {
-    return null;
-  }
+  if (pathname?.startsWith('/v/')) return null;
 
   const isActive = (href: string) => pathname === href;
+
+  const navLinks = [
+    { href: '/', icon: <Download size={17} />, label: 'Download' },
+    { href: '/queue', icon: <ListMusic size={17} />, label: 'Queue' },
+    { href: '/library', icon: <Tv size={17} />, label: 'Library' },
+    { href: '/subscriptions', icon: <Rss size={17} />, label: 'Subscriptions' },
+    ...(isAdmin ? [
+      { href: '/settings', icon: <Settings size={17} />, label: 'Settings' },
+      { href: '/admin', icon: <Shield size={17} />, label: 'Admin' },
+    ] : []),
+  ];
 
   return (
     <>
       <style>{`
-        .nav-wrapper {
-          position: sticky;
-          top: 0;
-          left: 0;
-          right: 0;
-          display: flex;
-          justify-content: center;
-          padding: 1rem 1rem;
+        .site-header {
+          position: fixed;
+          top: 0; left: 0; right: 0;
           z-index: 100;
-          pointer-events: none;
-          box-sizing: border-box;
-          max-width: 100vw;
-          overflow: hidden;
-          transition: transform 0.35s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.35s ease;
-        }
-        .nav-wrapper.hidden {
-          transform: translateY(-120%);
-          opacity: 0;
-          pointer-events: none;
-        }
-        .nav-wrapper.visible {
-          transform: translateY(0);
-          opacity: 1;
-        }
-        .nav-pill {
-          display: flex;
-          gap: 0.25rem;
-          padding: 0.5rem 0.75rem;
-          border-radius: 100px;
-          pointer-events: auto;
-          flex-wrap: nowrap;
-          max-width: calc(100vw - 2rem);
-          overflow: hidden;
-        }
-        .nav-item {
+          height: 60px;
           display: flex;
           align-items: center;
-          gap: 0.5rem;
-          padding: 0.5rem 1rem;
-          border-radius: 100px;
-          color: var(--foreground);
+          padding: 0 1.5rem;
+          transition: background 0.3s, box-shadow 0.3s, border-color 0.3s;
+          background: var(--background, #fff);
+          border-bottom: 1px solid transparent;
+        }
+        .site-header.scrolled {
+          background: var(--card-bg, rgba(255,255,255,0.92));
+          backdrop-filter: blur(16px);
+          -webkit-backdrop-filter: blur(16px);
+          border-bottom-color: var(--border);
+          box-shadow: 0 1px 12px rgba(0,0,0,0.06);
+        }
+        .header-inner {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          width: 100%;
+          max-width: 1280px;
+          margin: 0 auto;
+        }
+
+        /* ── Logo ── */
+        .header-logo {
+          display: flex;
+          align-items: center;
+          gap: 0.75rem;
           text-decoration: none;
-          font-weight: 500;
-          transition: all 0.2s ease;
-          background: transparent;
-          white-space: nowrap;
-          font-size: 0.95rem;
           flex-shrink: 0;
         }
-        .nav-item:hover {
+        .logo-text {
+          font-size: 1.35rem;
+          font-weight: 700;
+          letter-spacing: -0.02em;
+          color: var(--foreground);
+          line-height: 1;
+        }
+        .logo-text span {
+          color: var(--primary, #1a85ff);
+        }
+
+        /* ── Desktop nav ── */
+        .header-nav {
+          display: flex;
+          align-items: center;
+          gap: 0.15rem;
+        }
+        .h-nav-item {
+          display: flex;
+          align-items: center;
+          gap: 0.4rem;
+          padding: 0.45rem 0.85rem;
+          border-radius: 8px;
+          color: var(--text-muted, #888);
+          text-decoration: none;
+          font-weight: 500;
+          font-size: 0.875rem;
+          transition: background 0.15s, color 0.15s;
+          white-space: nowrap;
+          background: transparent;
+          border: none;
+          cursor: pointer;
+        }
+        .h-nav-item:hover {
           background: var(--hover);
-          color: var(--primary);
+          color: var(--foreground);
         }
-        .nav-item.active {
-          background: var(--primary);
-          color: white;
+        .h-nav-item.active {
+          background: rgba(var(--primary-rgb, 26,133,255), 0.1);
+          color: var(--primary, #1a85ff);
+          font-weight: 600;
         }
-        .nav-label {
-          display: inline;
+        .h-nav-item.logout {
+          color: #ef4444;
         }
-
-        @media (max-width: 640px) {
-          .nav-item {
-            padding: 0.5rem 0.85rem;
-            font-size: 0.85rem;
-            gap: 0.35rem;
-          }
-          .nav-pill {
-            padding: 0.4rem 0.6rem;
-          }
+        .h-nav-item.logout:hover {
+          background: rgba(239, 68, 68, 0.08);
+          color: #ef4444;
         }
 
-        @media (max-width: 430px) {
-          .nav-label {
-            display: none;
-          }
-          .nav-item {
-            padding: 0.6rem 0.75rem;
-          }
-          .nav-pill {
-            gap: 0.1rem;
-            padding: 0.4rem 0.5rem;
-          }
+        /* ── Mobile burger ── */
+        .mobile-burger {
+          display: none;
+          align-items: center;
+          justify-content: center;
+          width: 38px; height: 38px;
+          border-radius: 8px;
+          border: 1px solid var(--border);
+          background: transparent;
+          color: var(--foreground);
+          cursor: pointer;
+          transition: background 0.15s;
+        }
+        .mobile-burger:hover { background: var(--hover); }
+
+        /* ── Mobile drawer ── */
+        .mobile-drawer {
+          display: none;
+          position: fixed;
+          top: 60px; left: 0; right: 0;
+          background: var(--card-bg, white);
+          border-bottom: 1px solid var(--border);
+          backdrop-filter: blur(16px);
+          -webkit-backdrop-filter: blur(16px);
+          padding: 0.75rem 1rem;
+          flex-direction: column;
+          gap: 0.25rem;
+          z-index: 99;
+          box-shadow: 0 8px 24px rgba(0,0,0,0.08);
+        }
+        .mobile-drawer.open { display: flex; }
+        .mobile-drawer .h-nav-item {
+          padding: 0.7rem 1rem;
+          border-radius: 10px;
+          font-size: 0.95rem;
+        }
+
+        @media (max-width: 768px) {
+          .header-nav { display: none; }
+          .mobile-burger { display: flex; }
         }
       `}</style>
-      <nav className={`nav-wrapper ${visible ? 'visible' : 'hidden'}`}>
-        <div className="glass-panel nav-pill">
-          <Link href="/" className={`nav-item${isActive('/') ? ' active' : ''}`}>
-            <Download size={20} />
-            <span className="nav-label">Download</span>
+
+      <header className={`site-header${scrolled ? ' scrolled' : ''}`}>
+        <div className="header-inner">
+          {/* Logo */}
+          <Link 
+            href="/" 
+            className="header-logo"
+            onClick={(e) => {
+              if (pathname === '/') {
+                e.preventDefault();
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+              }
+            }}
+          >
+            <img src="/logo.png" alt="Logo" style={{ width: 44, height: 44, borderRadius: 10, objectFit: 'contain', flexShrink: 0 }} />
+            <span className="logo-text">Media<span>Load</span></span>
           </Link>
-          <Link href="/queue" className={`nav-item${isActive('/queue') ? ' active' : ''}`}>
-            <ListMusic size={20} />
-            <span className="nav-label">Queue</span>
-          </Link>
-          <Link href="/library" className={`nav-item${isActive('/library') ? ' active' : ''}`}>
-            <Tv size={20} />
-            <span className="nav-label">Library</span>
-          </Link>
-          <Link href="/subscriptions" className={`nav-item${isActive('/subscriptions') ? ' active' : ''}`}>
-            <Rss size={20} />
-            <span className="nav-label">Subscriptions</span>
-          </Link>
-          {isAdmin && (
-            <>
-              <Link href="/settings" className={`nav-item${isActive('/settings') ? ' active' : ''}`}>
-                <Settings size={20} />
-                <span className="nav-label">Settings</span>
+
+          {/* Desktop nav */}
+          <nav className="header-nav">
+            {navLinks.map(({ href, icon, label }) => (
+              <Link key={href} href={href} className={`h-nav-item${isActive(href) ? ' active' : ''}`}>
+                {icon}
+                {label}
               </Link>
-              <Link href="/admin" className={`nav-item${isActive('/admin') ? ' active' : ''}`}>
-                <Shield size={20} />
-                <span className="nav-label">Admin</span>
-              </Link>
-              <button onClick={handleLogout} className="nav-item" style={{ border: 'none', cursor: 'pointer' }}>
-                <LogOut size={20} />
-                <span className="nav-label">Logout</span>
+            ))}
+            {isAdmin && (
+              <button onClick={handleLogout} className="h-nav-item logout">
+                <LogOut size={17} />
+                Logout
               </button>
-            </>
-          )}
+            )}
+          </nav>
+
+          {/* Mobile burger */}
+          <button className="mobile-burger" onClick={() => setMobileOpen(o => !o)} aria-label="Toggle menu">
+            {mobileOpen ? <X size={20} /> : <Menu size={20} />}
+          </button>
         </div>
-      </nav>
+      </header>
+
+      {/* Mobile drawer */}
+      <div className={`mobile-drawer${mobileOpen ? ' open' : ''}`}>
+        {navLinks.map(({ href, icon, label }) => (
+          <Link key={href} href={href} className={`h-nav-item${isActive(href) ? ' active' : ''}`}>
+            {icon}
+            {label}
+          </Link>
+        ))}
+        {isAdmin && (
+          <button onClick={handleLogout} className="h-nav-item logout">
+            <LogOut size={17} />
+            Logout
+          </button>
+        )}
+      </div>
     </>
   );
 }

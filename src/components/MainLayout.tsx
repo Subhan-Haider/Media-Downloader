@@ -35,7 +35,9 @@ export default function MainLayout({ children, isAdmin }: { children: React.Reac
           <Link href="/" className="footer-link">Home</Link>
           <Link href="/about" className="footer-link">About</Link>
           <Link href="/library" className="footer-link">Library</Link>
-          <Link href="/privacy" className="footer-link">Privacy & Terms</Link>
+          <Link href="/blog" className="footer-link">Blog</Link>
+          <Link href="/privacy" className="footer-link">Privacy Policy</Link>
+          <Link href="/terms" className="footer-link">Terms of Service</Link>
         </div>
         <div style={{ display: 'flex', justifyContent: 'center', gap: '1.5rem', marginBottom: '2rem' }}>
           <a href="https://github.com/subhan-haider" target="_blank" rel="noopener noreferrer" aria-label="GitHub" className="footer-link">
