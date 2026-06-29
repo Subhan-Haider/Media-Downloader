@@ -535,23 +535,31 @@ async function startDownload(id: string, url: string, type: string, quality: str
         return;
       }
 
-      if (url.includes('facebook.com') && (errMsg.toLowerCase().includes('cannot parse data') || type === 'image')) {
+      if ((url.includes('facebook.com') || url.includes('fb.watch')) && (errMsg.toLowerCase().includes('cannot parse data') || type === 'image')) {
         updateQueueItem(id, { progress: 'Fetching Facebook image...' });
         try {
-          const res = await fetch(url, { headers: { 'User-Agent': 'Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)' } });
-          if (res.ok) {
-            const html = await res.text();
-            const match = html.match(/<meta\s+property="og:image"\s+content="([^"]+)"/i);
-            if (match) {
-              const imageUrl = match[1].replace(/&amp;/g, '&');
-              // Use Discordbot User-Agent because Facebook only returns raw images for social media crawlers
-              await downloadImageUrl(id, imageUrl, 'Mozilla/5.0 (compatible; Discordbot/2.0; +https://discordapp.com)');
-              updateQueueItem(id, {
-                title: 'Facebook Image',
-                thumbnail: imageUrl
-              });
-              return;
-            }
+          // Fetch to resolve any redirects (like /share/ or fb.watch)
+          const res = await fetch(url, { redirect: 'follow' });
+          const finalUrl = res.url;
+          
+          let fbid = null;
+          const fbidMatch = finalUrl.match(/fbid[=:](\d+)/);
+          if (fbidMatch) {
+            fbid = fbidMatch[1];
+          } else {
+            const pathMatch = finalUrl.match(/\/photos?\/(?:[^\/]+\/)*?(\d+)/);
+            if (pathMatch) fbid = pathMatch[1];
+          }
+
+          if (fbid) {
+            const imageUrl = `https://lookaside.fbsbx.com/lookaside/crawler/media/?media_id=${fbid}`;
+            // Use Discordbot User-Agent because Facebook only returns raw images for social media crawlers
+            await downloadImageUrl(id, imageUrl, 'Mozilla/5.0 (compatible; Discordbot/2.0; +https://discordapp.com)');
+            updateQueueItem(id, {
+              title: 'Facebook Image',
+              thumbnail: imageUrl
+            });
+            return;
           }
         } catch (err) {
           console.error("Facebook image fallback failed:", err);

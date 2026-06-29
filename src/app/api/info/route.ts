@@ -165,30 +165,40 @@ export async function GET(request: Request) {
       } catch (e) {}
     }
 
-    if (url.includes('facebook.com') && errMsg.toLowerCase().includes('cannot parse data')) {
+    if ((url.includes('facebook.com') || url.includes('fb.watch')) && errMsg.toLowerCase().includes('cannot parse data')) {
       try {
-        const res = await fetch(url, { headers: { 'User-Agent': 'Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)' } });
-        if (res.ok) {
-          const html = await res.text();
-          const match = html.match(/<meta\s+property="og:image"\s+content="([^"]+)"/i);
-          if (match) {
-            const imageUrl = match[1].replace(/&amp;/g, '&');
-            return NextResponse.json({
-              title: 'Facebook Image',
-              thumbnail: imageUrl,
-              duration: null,
-              formats: [{
-                itag: 'facebook_image', // Custom itag
-                qualityLabel: 'High-Res Facebook Image',
-                hasVideo: false,
-                hasAudio: false,
-                container: imageUrl.match(/\.png/i) ? 'png' : 'jpg',
-                contentLength: 0
-              }],
-            });
-          }
+        // Fetch to resolve any redirects (like /share/ or fb.watch)
+        const res = await fetch(url, { redirect: 'follow' });
+        const finalUrl = res.url;
+        
+        let fbid = null;
+        const fbidMatch = finalUrl.match(/fbid[=:](\d+)/);
+        if (fbidMatch) {
+          fbid = fbidMatch[1];
+        } else {
+          const pathMatch = finalUrl.match(/\/photos?\/(?:[^\/]+\/)*?(\d+)/);
+          if (pathMatch) fbid = pathMatch[1];
         }
-      } catch (e) {}
+
+        if (fbid) {
+          const imageUrl = `https://lookaside.fbsbx.com/lookaside/crawler/media/?media_id=${fbid}`;
+          return NextResponse.json({
+            title: 'Facebook Image',
+            thumbnail: imageUrl,
+            duration: null,
+            formats: [{
+              itag: 'facebook_image', // Custom itag
+              qualityLabel: 'High-Res Facebook Image',
+              hasVideo: false,
+              hasAudio: false,
+              container: 'jpg', // Lookaside usually returns JPEG
+              contentLength: 0
+            }],
+          });
+        }
+      } catch (e) {
+        console.error('Facebook info fallback error:', e);
+      }
     }
 
     console.error('Error fetching video info:', error.stderr || error);
