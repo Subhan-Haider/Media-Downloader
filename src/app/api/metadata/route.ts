@@ -30,17 +30,24 @@ export async function POST(request: Request) {
       options.cookiesFromBrowser = browserAuth;
     }
     
-    // Check for explicit cookies files
-    const ytCookiesPath = join(/*turbopackIgnore: true*/ process.cwd(), 'data', 'youtube_cookies.txt');
-    const igCookiesPath = join(/*turbopackIgnore: true*/ process.cwd(), 'data', 'instagram_cookies.txt');
+    // Check for explicit cookies files using absolute paths for fs.existsSync
+    const ytCookiesPathAbs = join(/*turbopackIgnore: true*/ process.cwd(), 'data', 'youtube_cookies.txt');
+    const igCookiesPathAbs = join(/*turbopackIgnore: true*/ process.cwd(), 'data', 'instagram_cookies.txt');
     
-    if (isYouTube && fs.existsSync(ytCookiesPath)) {
-      options.cookies = ytCookiesPath;
-    } else if (isInstagram && fs.existsSync(igCookiesPath)) {
-      options.cookies = igCookiesPath;
+    const ytCookiesPathRel = 'data/youtube_cookies.txt';
+    const igCookiesPathRel = 'data/instagram_cookies.txt';
+
+    if (isInstagram && fs.existsSync(igCookiesPathAbs)) {
+      options.cookies = igCookiesPathRel;
     }
 
-    const info = await youtubedl(url, options) as any;
+    let info = await youtubedl(url, options) as any;
+
+    // Retry with YouTube cookies if formats are missing (e.g. age-restricted video)
+    if (isYouTube && (!info.formats || info.formats.length === 0) && fs.existsSync(ytCookiesPathAbs)) {
+      options.cookies = ytCookiesPathRel;
+      info = await youtubedl(url, options) as any;
+    }
 
     if (!info.formats) {
       return NextResponse.json({ qualities: [] });

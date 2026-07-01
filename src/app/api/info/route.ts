@@ -54,12 +54,15 @@ export async function GET(request: Request) {
 
     const isYouTube = url.includes('youtube.com') || url.includes('youtu.be');
     
-    const ytCookiesPath = join(process.cwd(), 'data', 'youtube_cookies.txt');
-    if (isYouTube && fs.existsSync(ytCookiesPath)) {
-      options.cookies = ytCookiesPath;
-    }
+    const ytCookiesPathAbs = join(process.cwd(), 'data', 'youtube_cookies.txt');
+    const ytCookiesPathRel = 'data/youtube_cookies.txt';
 
-    const info = await youtubedl(url, options) as any;
+    let info = await youtubedl(url, options) as any;
+
+    if (isYouTube && (!info.formats || info.formats.length === 0) && (!info.entries || info.entries.length === 0) && fs.existsSync(ytCookiesPathAbs)) {
+      options.cookies = ytCookiesPathRel;
+      info = await youtubedl(url, options) as any;
+    }
     
     if (info._type === 'playlist') {
       // 🔔 Discord: playlist detected

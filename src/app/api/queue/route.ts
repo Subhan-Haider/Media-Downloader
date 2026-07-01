@@ -447,12 +447,17 @@ async function startDownload(id: string, url: string, type: string, quality: str
         extractorArgs: 'youtube:player_client=android,web',
         jsRuntimes: `node:"${process.execPath}"`
       };
-      if (isYouTube && hasYtCookies) {
-        metaOptions.cookies = ytCookiesPath;
-      } else if (browserAuth && browserAuth !== 'none') {
+      const ytCookiesPathRel = 'data/youtube_cookies.txt';
+
+      if (browserAuth && browserAuth !== 'none') {
         metaOptions.cookiesFromBrowser = browserAuth;
       }
-      const info = await youtubedl(url, metaOptions) as any;
+      let info = await youtubedl(url, metaOptions) as any;
+
+      if (isYouTube && (!info.formats || info.formats.length === 0) && hasYtCookies) {
+        metaOptions.cookies = ytCookiesPathRel;
+        info = await youtubedl(url, metaOptions) as any;
+      }
 
       if (!isAudio && !isImage && info.formats) {
         const hasVideo = info.formats.some((f: any) => f.vcodec && f.vcodec !== 'none' && f.vcodec !== 'mhtml');
@@ -640,11 +645,16 @@ async function startDownload(id: string, url: string, type: string, quality: str
     args.push('--write-auto-subs', '--embed-subs');
   }
 
-  // Inject auth for Instagram (cookies file) or other sites (browser cookies)
+  // We only pass cookies if they exist. For YouTube, we prioritize fetching without cookies if possible, 
+  // but during actual download we might need them if the video is age restricted.
+  const ytCookiesPathRel = 'data/youtube_cookies.txt';
+  const igCookiesPathRel = 'data/instagram_cookies.txt';
+
   if (isInstagram && hasCookies) {
-    args.push('--cookies', igCookiesPath);
+    args.push('--cookies', igCookiesPathRel);
   } else if (isYouTube && hasYtCookies) {
-    args.push('--cookies', ytCookiesPath);
+    // If we have YouTube cookies, we pass them during download to ensure it succeeds for 18+ videos
+    args.push('--cookies', ytCookiesPathRel);
   } else if (browserAuth && browserAuth !== 'none') {
     args.push('--cookies-from-browser', browserAuth);
   }
