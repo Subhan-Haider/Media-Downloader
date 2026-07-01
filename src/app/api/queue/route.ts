@@ -446,7 +446,8 @@ async function startDownload(id: string, url: string, type: string, quality: str
         noCheckCertificates: true,
         jsRuntimes: `node:"${process.execPath}"`
       };
-      const ytCookiesPathRel = 'data/youtube_cookies.txt';
+      let ytCookiesOpt = join(process.cwd(), 'data', 'youtube_cookies.txt');
+      if (process.platform === 'win32' && ytCookiesOpt.includes(' ')) ytCookiesOpt = `"${ytCookiesOpt}"`;
 
       if (browserAuth && browserAuth !== 'none') {
         metaOptions.cookiesFromBrowser = browserAuth;
@@ -456,7 +457,7 @@ async function startDownload(id: string, url: string, type: string, quality: str
         info = await youtubedl(url, metaOptions) as any;
       } catch (e: any) {
         if (isYouTube && hasYtCookies) {
-          metaOptions.cookies = ytCookiesPathRel;
+          metaOptions.cookies = ytCookiesOpt;
           info = await youtubedl(url, metaOptions) as any;
         } else {
           throw e;
@@ -656,14 +657,18 @@ async function startDownload(id: string, url: string, type: string, quality: str
 
   // We only pass cookies if they exist. For YouTube, we prioritize fetching without cookies if possible, 
   // but during actual download we might need them if the video is age restricted.
-  const ytCookiesPathRel = 'data/youtube_cookies.txt';
-  const igCookiesPathRel = 'data/instagram_cookies.txt';
+  let ytCookiesOpt = join(process.cwd(), 'data', 'youtube_cookies.txt');
+  let igCookiesOpt = join(process.cwd(), 'data', 'instagram_cookies.txt');
+  if (process.platform === 'win32') {
+    if (ytCookiesOpt.includes(' ')) ytCookiesOpt = `"${ytCookiesOpt}"`;
+    if (igCookiesOpt.includes(' ')) igCookiesOpt = `"${igCookiesOpt}"`;
+  }
 
   if (isInstagram && hasCookies) {
-    args.push('--cookies', igCookiesPathRel);
+    args.push('--cookies', igCookiesOpt);
   } else if (isYouTube && hasYtCookies) {
     // If we have YouTube cookies, we pass them during download to ensure it succeeds for 18+ videos
-    args.push('--cookies', ytCookiesPathRel);
+    args.push('--cookies', ytCookiesOpt);
   } else if (browserAuth && browserAuth !== 'none') {
     args.push('--cookies-from-browser', browserAuth);
   }

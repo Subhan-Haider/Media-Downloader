@@ -33,11 +33,15 @@ export async function POST(request: Request) {
     const ytCookiesPathAbs = join(/*turbopackIgnore: true*/ process.cwd(), 'data', 'youtube_cookies.txt');
     const igCookiesPathAbs = join(/*turbopackIgnore: true*/ process.cwd(), 'data', 'instagram_cookies.txt');
     
-    const ytCookiesPathRel = 'data/youtube_cookies.txt';
-    const igCookiesPathRel = 'data/instagram_cookies.txt';
+    let ytCookiesOpt = ytCookiesPathAbs;
+    let igCookiesOpt = igCookiesPathAbs;
+    if (process.platform === 'win32') {
+      if (ytCookiesOpt.includes(' ')) ytCookiesOpt = `"${ytCookiesOpt}"`;
+      if (igCookiesOpt.includes(' ')) igCookiesOpt = `"${igCookiesOpt}"`;
+    }
 
     if (isInstagram && fs.existsSync(igCookiesPathAbs)) {
-      options.cookies = igCookiesPathRel;
+      options.cookies = igCookiesOpt;
     }
 
     let info: any;
@@ -45,7 +49,7 @@ export async function POST(request: Request) {
       info = await youtubedl(url, options) as any;
     } catch (e: any) {
       if (isYouTube && fs.existsSync(ytCookiesPathAbs)) {
-        options.cookies = ytCookiesPathRel;
+        options.cookies = ytCookiesOpt;
         info = await youtubedl(url, options) as any;
       } else {
         throw e;
