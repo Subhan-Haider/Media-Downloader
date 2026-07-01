@@ -32,9 +32,9 @@ export async function POST(request: Request) {
     const igCookiesPath = join(/*turbopackIgnore: true*/ process.cwd(), 'data', 'instagram_cookies.txt');
     
     if (isYouTube && fs.existsSync(ytCookiesPath)) {
-      options.cookies = `"${ytCookiesPath}"`;
+      options.cookies = ytCookiesPath;
     } else if (isInstagram && fs.existsSync(igCookiesPath)) {
-      options.cookies = `"${igCookiesPath}"`;
+      options.cookies = igCookiesPath;
     }
 
     const info = await youtubedl(url, options) as any;

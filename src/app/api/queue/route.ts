@@ -356,7 +356,7 @@ async function startDownload(id: string, url: string, type: string, quality: str
 
     try {
       const metaOptions: any = { dumpJson: true, noWarnings: true, noCheckCertificates: true };
-      if (hasCookies) metaOptions.cookies = `"${igCookiesPath}"`;
+      if (hasCookies) metaOptions.cookies = igCookiesPath;
       else if (browserAuth && browserAuth !== 'none') metaOptions.cookiesFromBrowser = browserAuth;
 
       const info = await youtubedl(url, metaOptions) as any;
@@ -446,7 +446,7 @@ async function startDownload(id: string, url: string, type: string, quality: str
         jsRuntimes: `node:"${process.execPath}"`
       };
       if (isYouTube && hasYtCookies) {
-        metaOptions.cookies = `"${ytCookiesPath}"`;
+        metaOptions.cookies = ytCookiesPath;
       } else if (browserAuth && browserAuth !== 'none') {
         metaOptions.cookiesFromBrowser = browserAuth;
       }
