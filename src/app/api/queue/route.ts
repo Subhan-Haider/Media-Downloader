@@ -442,7 +442,9 @@ async function startDownload(id: string, url: string, type: string, quality: str
       const metaOptions: any = {
         dumpJson: true,
         noWarnings: true,
+        ignoreErrors: true,
         noCheckCertificates: true,
+        extractorArgs: 'youtube:player_client=android,web',
         jsRuntimes: `node:"${process.execPath}"`
       };
       if (isYouTube && hasYtCookies) {

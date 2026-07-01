@@ -15,7 +15,9 @@ export async function POST(request: Request) {
     const options: any = {
       dumpSingleJson: true,
       noWarnings: true,
+      ignoreErrors: true,
       noCheckCertificates: true,
+      extractorArgs: 'youtube:player_client=android,web',
       jsRuntimes: `node:"${process.execPath}"`
     };
 
