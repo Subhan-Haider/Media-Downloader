@@ -40,10 +40,20 @@ export async function POST(request: Request) {
       options.cookies = igCookiesPathRel;
     }
 
-    let info = await youtubedl(url, options) as any;
+    let info: any;
+    try {
+      info = await youtubedl(url, options) as any;
+    } catch (e: any) {
+      if (isYouTube && fs.existsSync(ytCookiesPathAbs)) {
+        options.cookies = ytCookiesPathRel;
+        info = await youtubedl(url, options) as any;
+      } else {
+        throw e;
+      }
+    }
 
-    // Retry with YouTube cookies if formats are missing (e.g. age-restricted video)
-    if (isYouTube && (!info.formats || info.formats.length === 0) && fs.existsSync(ytCookiesPathAbs)) {
+    // Also retry if it didn't throw but returned 0 formats
+    if (isYouTube && (!info.formats || info.formats.length === 0) && !options.cookies && fs.existsSync(ytCookiesPathAbs)) {
       options.cookies = ytCookiesPathRel;
       info = await youtubedl(url, options) as any;
     }

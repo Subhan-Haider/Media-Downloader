@@ -451,9 +451,19 @@ async function startDownload(id: string, url: string, type: string, quality: str
       if (browserAuth && browserAuth !== 'none') {
         metaOptions.cookiesFromBrowser = browserAuth;
       }
-      let info = await youtubedl(url, metaOptions) as any;
+      let info: any;
+      try {
+        info = await youtubedl(url, metaOptions) as any;
+      } catch (e: any) {
+        if (isYouTube && hasYtCookies) {
+          metaOptions.cookies = ytCookiesPathRel;
+          info = await youtubedl(url, metaOptions) as any;
+        } else {
+          throw e;
+        }
+      }
 
-      if (isYouTube && (!info.formats || info.formats.length === 0) && hasYtCookies) {
+      if (isYouTube && (!info.formats || info.formats.length === 0) && !metaOptions.cookies && hasYtCookies) {
         metaOptions.cookies = ytCookiesPathRel;
         info = await youtubedl(url, metaOptions) as any;
       }
