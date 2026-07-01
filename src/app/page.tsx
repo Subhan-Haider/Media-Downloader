@@ -11,7 +11,7 @@ export default function Home() {
   const [urls, setUrls] = useState<string[]>(['']);
   const [quality, setQuality] = useState('best');
   const [availableQualities, setAvailableQualities] = useState<number[]>([]);
-  const [metadata, setMetadata] = useState<Record<number, { title?: string, thumbnail?: string, duration?: string }>>({});
+  const [metadata, setMetadata] = useState<Record<number, { title?: string, thumbnail?: string, duration?: string, error?: string }>>({});
   const [fetchingQualities, setFetchingQualities] = useState(false);
   const [loading, setLoading] = useState<'video' | 'audio' | 'image' | null>(null);
   const [isAdmin, setIsAdmin] = useState(false);
@@ -59,23 +59,44 @@ export default function Home() {
         return;
       }
       const timer = setTimeout(async () => {
-        if (i === 0) setFetchingQualities(true);
+        if (i === 0) {
+          setFetchingQualities(true);
+          setMetadata(prev => { const next = { ...prev }; if (next[i]) next[i].error = undefined; return next; });
+        }
         try {
           const res = await fetch('/api/metadata', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ url }),
           });
-          const data = await res.json();
-          if (data.title || data.thumbnail) {
-            setMetadata(prev => ({ ...prev, [i]: { title: data.title, thumbnail: data.thumbnail, duration: data.duration } }));
+          
+          let data;
+          const text = await res.text();
+          try {
+            data = JSON.parse(text);
+          } catch (err) {
+            console.error("Failed to parse metadata JSON:", text.substring(0, 200));
+            throw new Error("Invalid response from server");
           }
+
+          if (!res.ok) {
+            throw new Error(data.error || 'Failed to fetch metadata');
+          }
+
+          if (!data.title && !data.thumbnail) {
+            throw new Error('No metadata found for this URL');
+          }
+
+          setMetadata(prev => ({ ...prev, [i]: { title: data.title, thumbnail: data.thumbnail, duration: data.duration, error: undefined } }));
+
           if (i === 0 && data.qualities && data.qualities.length > 0) {
             setAvailableQualities(data.qualities);
             setQuality(String(data.qualities[0]));
           }
-        } catch (e) {
-          setMetadata(prev => { const next = { ...prev }; delete next[i]; return next; });
+        } catch (e: any) {
+          console.error("Metadata fetch error:", e);
+          setMetadata(prev => ({ ...prev, [i]: { error: e.message || 'Error loading metadata' } }));
+          if (i === 0) setAvailableQualities([]);
         } finally {
           if (i === 0) setFetchingQualities(false);
         }
@@ -256,19 +277,31 @@ export default function Home() {
                 borderRadius: '20px', border: '1px solid rgba(0,0,0,0.05)', textAlign: 'left',
                 boxShadow: '0 10px 30px rgba(0,0,0,0.05)', backdropFilter: 'blur(10px)'
               }}>
-                {meta.thumbnail ? (
-                  <img src={meta.thumbnail} alt="thumb" style={{ width: '140px', height: '79px', objectFit: 'cover', borderRadius: '12px', boxShadow: '0 4px 12px rgba(0,0,0,0.1)', flexShrink: 0 }} />
+                {meta.error ? (
+                  <div style={{ flex: 1, display: 'flex', alignItems: 'center', color: '#ef4444', gap: '1rem', minWidth: 0 }}>
+                    <CloudOff size={32} />
+                    <div>
+                      <h3 style={{ margin: '0 0 0.25rem 0', fontSize: '1.05rem', fontWeight: 600 }}>Failed to load video info</h3>
+                      <p style={{ margin: 0, fontSize: '0.9rem', opacity: 0.9 }}>{meta.error}</p>
+                    </div>
+                  </div>
                 ) : (
-                  <div style={{ width: '140px', height: '79px', background: 'rgba(0,0,0,0.05)', borderRadius: '12px', flexShrink: 0 }} />
+                  <>
+                    {meta.thumbnail ? (
+                      <img src={meta.thumbnail} alt="thumb" style={{ width: '140px', height: '79px', objectFit: 'cover', borderRadius: '12px', boxShadow: '0 4px 12px rgba(0,0,0,0.1)', flexShrink: 0 }} />
+                    ) : (
+                      <div style={{ width: '140px', height: '79px', background: 'rgba(0,0,0,0.05)', borderRadius: '12px', flexShrink: 0 }} />
+                    )}
+                    <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center', minWidth: 0 }}>
+                      <h3 style={{ margin: '0 0 0.4rem 0', fontSize: '1.05rem', lineHeight: 1.3, fontWeight: 700, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{meta.title || 'Unknown Video'}</h3>
+                      {meta.duration && (
+                        <p style={{ margin: 0, color: 'var(--text-muted)', fontSize: '0.9rem', fontWeight: 500 }}>
+                          Duration: {Math.floor(Number(meta.duration) / 60)}:{String(Number(meta.duration) % 60).padStart(2, '0')}
+                        </p>
+                      )}
+                    </div>
+                  </>
                 )}
-                <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center', minWidth: 0 }}>
-                  <h3 style={{ margin: '0 0 0.4rem 0', fontSize: '1.05rem', lineHeight: 1.3, fontWeight: 700, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{meta.title || 'Unknown Video'}</h3>
-                  {meta.duration && (
-                    <p style={{ margin: 0, color: 'var(--text-muted)', fontSize: '0.9rem', fontWeight: 500 }}>
-                      Duration: {Math.floor(Number(meta.duration) / 60)}:{String(Number(meta.duration) % 60).padStart(2, '0')}
-                    </p>
-                  )}
-                </div>
               </div>
             ))}
             {availableQualities.length > 0 && (
