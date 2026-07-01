@@ -44,6 +44,8 @@ export async function GET(request: Request) {
     const options: any = {
       dumpSingleJson: true,
       noWarnings: true,
+      ignoreErrors: true,
+      format: 'all',
       noCheckCertificates: true,
       youtubeSkipDashManifest: true,
       flatPlaylist: true,
