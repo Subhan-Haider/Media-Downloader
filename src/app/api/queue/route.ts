@@ -444,7 +444,6 @@ async function startDownload(id: string, url: string, type: string, quality: str
         noWarnings: true,
         ignoreErrors: true,
         noCheckCertificates: true,
-        extractorArgs: 'youtube:player_client=android,web',
         jsRuntimes: `node:"${process.execPath}"`
       };
       const ytCookiesPathRel = 'data/youtube_cookies.txt';

@@ -17,7 +17,6 @@ export async function POST(request: Request) {
       noWarnings: true,
       ignoreErrors: true,
       noCheckCertificates: true,
-      extractorArgs: 'youtube:player_client=android,web',
       format: 'all',
       jsRuntimes: `node:"${process.execPath}"`
     };
