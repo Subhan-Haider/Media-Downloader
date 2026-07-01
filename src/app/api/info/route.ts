@@ -57,9 +57,19 @@ export async function GET(request: Request) {
     const ytCookiesPathAbs = join(process.cwd(), 'data', 'youtube_cookies.txt');
     const ytCookiesPathRel = 'data/youtube_cookies.txt';
 
-    let info = await youtubedl(url, options) as any;
+    let info: any;
+    try {
+      info = await youtubedl(url, options) as any;
+    } catch (e: any) {
+      if (isYouTube && fs.existsSync(ytCookiesPathAbs)) {
+        options.cookies = ytCookiesPathRel;
+        info = await youtubedl(url, options) as any;
+      } else {
+        throw e;
+      }
+    }
 
-    if (isYouTube && (!info.formats || info.formats.length === 0) && (!info.entries || info.entries.length === 0) && fs.existsSync(ytCookiesPathAbs)) {
+    if (isYouTube && (!info.formats || info.formats.length === 0) && (!info.entries || info.entries.length === 0) && !options.cookies && fs.existsSync(ytCookiesPathAbs)) {
       options.cookies = ytCookiesPathRel;
       info = await youtubedl(url, options) as any;
     }
